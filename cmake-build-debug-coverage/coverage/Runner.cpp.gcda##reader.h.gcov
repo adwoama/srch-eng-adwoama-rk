@@ -1,0 +1,3708 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/reader.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2://
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#ifndef RAPIDJSON_READER_H_
+        -:   16:#define RAPIDJSON_READER_H_
+        -:   17:
+        -:   18:/*! \file reader.h */
+        -:   19:
+        -:   20:#include "allocators.h"
+        -:   21:#include "stream.h"
+        -:   22:#include "encodedstream.h"
+        -:   23:#include "internal/clzll.h"
+        -:   24:#include "internal/meta.h"
+        -:   25:#include "internal/stack.h"
+        -:   26:#include "internal/strtod.h"
+        -:   27:#include <limits>
+        -:   28:
+        -:   29:#if defined(RAPIDJSON_SIMD) && defined(_MSC_VER)
+        -:   30:#include <intrin.h>
+        -:   31:#pragma intrinsic(_BitScanForward)
+        -:   32:#endif
+        -:   33:#ifdef RAPIDJSON_SSE42
+        -:   34:#include <nmmintrin.h>
+        -:   35:#elif defined(RAPIDJSON_SSE2)
+        -:   36:#include <emmintrin.h>
+        -:   37:#elif defined(RAPIDJSON_NEON)
+        -:   38:#include <arm_neon.h>
+        -:   39:#endif
+        -:   40:
+        -:   41:#ifdef __clang__
+        -:   42:RAPIDJSON_DIAG_PUSH
+        -:   43:RAPIDJSON_DIAG_OFF(old-style-cast)
+        -:   44:RAPIDJSON_DIAG_OFF(padded)
+        -:   45:RAPIDJSON_DIAG_OFF(switch-enum)
+        -:   46:#elif defined(_MSC_VER)
+        -:   47:RAPIDJSON_DIAG_PUSH
+        -:   48:RAPIDJSON_DIAG_OFF(4127)  // conditional expression is constant
+        -:   49:RAPIDJSON_DIAG_OFF(4702)  // unreachable code
+        -:   50:#endif
+        -:   51:
+        -:   52:#ifdef __GNUC__
+        -:   53:RAPIDJSON_DIAG_PUSH
+        -:   54:RAPIDJSON_DIAG_OFF(effc++)
+        -:   55:#endif
+        -:   56:
+        -:   57://!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+        -:   58:#define RAPIDJSON_NOTHING /* deliberately empty */
+        -:   59:#ifndef RAPIDJSON_PARSE_ERROR_EARLY_RETURN
+        -:   60:#define RAPIDJSON_PARSE_ERROR_EARLY_RETURN(value) \
+        -:   61:    RAPIDJSON_MULTILINEMACRO_BEGIN \
+        -:   62:    if (RAPIDJSON_UNLIKELY(HasParseError())) { return value; } \
+        -:   63:    RAPIDJSON_MULTILINEMACRO_END
+        -:   64:#endif
+        -:   65:#define RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID \
+        -:   66:    RAPIDJSON_PARSE_ERROR_EARLY_RETURN(RAPIDJSON_NOTHING)
+        -:   67://!@endcond
+        -:   68:
+        -:   69:/*! \def RAPIDJSON_PARSE_ERROR_NORETURN
+        -:   70:    \ingroup RAPIDJSON_ERRORS
+        -:   71:    \brief Macro to indicate a parse error.
+        -:   72:    \param parseErrorCode \ref rapidjson::ParseErrorCode of the error
+        -:   73:    \param offset  position of the error in JSON input (\c size_t)
+        -:   74:
+        -:   75:    This macros can be used as a customization point for the internal
+        -:   76:    error handling mechanism of RapidJSON.
+        -:   77:
+        -:   78:    A common usage model is to throw an exception instead of requiring the
+        -:   79:    caller to explicitly check the \ref rapidjson::GenericReader::Parse's
+        -:   80:    return value:
+        -:   81:
+        -:   82:    \code
+        -:   83:    #define RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode,offset) \
+        -:   84:       throw ParseException(parseErrorCode, #parseErrorCode, offset)
+        -:   85:
+        -:   86:    #include <stdexcept>               // std::runtime_error
+        -:   87:    #include "rapidjson/error/error.h" // rapidjson::ParseResult
+        -:   88:
+        -:   89:    struct ParseException : std::runtime_error, rapidjson::ParseResult {
+        -:   90:      ParseException(rapidjson::ParseErrorCode code, const char* msg, size_t offset)
+        -:   91:        : std::runtime_error(msg), ParseResult(code, offset) {}
+        -:   92:    };
+        -:   93:
+        -:   94:    #include "rapidjson/reader.h"
+        -:   95:    \endcode
+        -:   96:
+        -:   97:    \see RAPIDJSON_PARSE_ERROR, rapidjson::GenericReader::Parse
+        -:   98: */
+        -:   99:#ifndef RAPIDJSON_PARSE_ERROR_NORETURN
+        -:  100:#define RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode, offset) \
+        -:  101:    RAPIDJSON_MULTILINEMACRO_BEGIN \
+        -:  102:    RAPIDJSON_ASSERT(!HasParseError()); /* Error can only be assigned once */ \
+        -:  103:    SetParseError(parseErrorCode, offset); \
+        -:  104:    RAPIDJSON_MULTILINEMACRO_END
+        -:  105:#endif
+        -:  106:
+        -:  107:/*! \def RAPIDJSON_PARSE_ERROR
+        -:  108:    \ingroup RAPIDJSON_ERRORS
+        -:  109:    \brief (Internal) macro to indicate and handle a parse error.
+        -:  110:    \param parseErrorCode \ref rapidjson::ParseErrorCode of the error
+        -:  111:    \param offset  position of the error in JSON input (\c size_t)
+        -:  112:
+        -:  113:    Invokes RAPIDJSON_PARSE_ERROR_NORETURN and stops the parsing.
+        -:  114:
+        -:  115:    \see RAPIDJSON_PARSE_ERROR_NORETURN
+        -:  116:    \hideinitializer
+        -:  117: */
+        -:  118:#ifndef RAPIDJSON_PARSE_ERROR
+        -:  119:#define RAPIDJSON_PARSE_ERROR(parseErrorCode, offset) \
+        -:  120:    RAPIDJSON_MULTILINEMACRO_BEGIN \
+        -:  121:    RAPIDJSON_PARSE_ERROR_NORETURN(parseErrorCode, offset); \
+        -:  122:    RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID; \
+        -:  123:    RAPIDJSON_MULTILINEMACRO_END
+        -:  124:#endif
+        -:  125:
+        -:  126:#include "error/error.h" // ParseErrorCode, ParseResult
+        -:  127:
+        -:  128:RAPIDJSON_NAMESPACE_BEGIN
+        -:  129:
+        -:  130:///////////////////////////////////////////////////////////////////////////////
+        -:  131:// ParseFlag
+        -:  132:
+        -:  133:/*! \def RAPIDJSON_PARSE_DEFAULT_FLAGS
+        -:  134:    \ingroup RAPIDJSON_CONFIG
+        -:  135:    \brief User-defined kParseDefaultFlags definition.
+        -:  136:
+        -:  137:    User can define this as any \c ParseFlag combinations.
+        -:  138:*/
+        -:  139:#ifndef RAPIDJSON_PARSE_DEFAULT_FLAGS
+        -:  140:#define RAPIDJSON_PARSE_DEFAULT_FLAGS kParseNoFlags
+        -:  141:#endif
+        -:  142:
+        -:  143://! Combination of parseFlags
+        -:  144:/*! \see Reader::Parse, Document::Parse, Document::ParseInsitu, Document::ParseStream
+        -:  145: */
+        -:  146:enum ParseFlag {
+        -:  147:    kParseNoFlags = 0,              //!< No flags are set.
+        -:  148:    kParseInsituFlag = 1,           //!< In-situ(destructive) parsing.
+        -:  149:    kParseValidateEncodingFlag = 2, //!< Validate encoding of JSON strings.
+        -:  150:    kParseIterativeFlag = 4,        //!< Iterative(constant complexity in terms of function call stack size) parsing.
+        -:  151:    kParseStopWhenDoneFlag = 8,     //!< After parsing a complete JSON root from stream, stop further processing the rest of stream. When this flag is used, parser will not generate kParseErrorDocumentRootNotSingular error.
+        -:  152:    kParseFullPrecisionFlag = 16,   //!< Parse number in full precision (but slower).
+        -:  153:    kParseCommentsFlag = 32,        //!< Allow one-line (//) and multi-line (/**/) comments.
+        -:  154:    kParseNumbersAsStringsFlag = 64,    //!< Parse all numbers (ints/doubles) as strings.
+        -:  155:    kParseTrailingCommasFlag = 128, //!< Allow trailing commas at the end of objects and arrays.
+        -:  156:    kParseNanAndInfFlag = 256,      //!< Allow parsing NaN, Inf, Infinity, -Inf and -Infinity as doubles.
+        -:  157:    kParseEscapedApostropheFlag = 512,  //!< Allow escaped apostrophe in strings.
+        -:  158:    kParseDefaultFlags = RAPIDJSON_PARSE_DEFAULT_FLAGS  //!< Default parse flags. Can be customized by defining RAPIDJSON_PARSE_DEFAULT_FLAGS
+        -:  159:};
+        -:  160:
+        -:  161:///////////////////////////////////////////////////////////////////////////////
+        -:  162:// Handler
+        -:  163:
+        -:  164:/*! \class rapidjson::Handler
+        -:  165:    \brief Concept for receiving events from GenericReader upon parsing.
+        -:  166:    The functions return true if no error occurs. If they return false,
+        -:  167:    the event publisher should terminate the process.
+        -:  168:\code
+        -:  169:concept Handler {
+        -:  170:    typename Ch;
+        -:  171:
+        -:  172:    bool Null();
+        -:  173:    bool Bool(bool b);
+        -:  174:    bool Int(int i);
+        -:  175:    bool Uint(unsigned i);
+        -:  176:    bool Int64(int64_t i);
+        -:  177:    bool Uint64(uint64_t i);
+        -:  178:    bool Double(double d);
+        -:  179:    /// enabled via kParseNumbersAsStringsFlag, string is not null-terminated (use length)
+        -:  180:    bool RawNumber(const Ch* str, SizeType length, bool copy);
+        -:  181:    bool String(const Ch* str, SizeType length, bool copy);
+        -:  182:    bool StartObject();
+        -:  183:    bool Key(const Ch* str, SizeType length, bool copy);
+        -:  184:    bool EndObject(SizeType memberCount);
+        -:  185:    bool StartArray();
+        -:  186:    bool EndArray(SizeType elementCount);
+        -:  187:};
+        -:  188:\endcode
+        -:  189:*/
+        -:  190:///////////////////////////////////////////////////////////////////////////////
+        -:  191:// BaseReaderHandler
+        -:  192:
+        -:  193://! Default implementation of Handler.
+        -:  194:/*! This can be used as base class of any reader handler.
+        -:  195:    \note implements Handler concept
+        -:  196:*/
+        -:  197:template<typename Encoding = UTF8<>, typename Derived = void>
+        -:  198:struct BaseReaderHandler {
+        -:  199:    typedef typename Encoding::Ch Ch;
+        -:  200:
+        -:  201:    typedef typename internal::SelectIf<internal::IsSame<Derived, void>, BaseReaderHandler, Derived>::Type Override;
+        -:  202:
+        -:  203:    bool Default() { return true; }
+        -:  204:    bool Null() { return static_cast<Override&>(*this).Default(); }
+        -:  205:    bool Bool(bool) { return static_cast<Override&>(*this).Default(); }
+        -:  206:    bool Int(int) { return static_cast<Override&>(*this).Default(); }
+        -:  207:    bool Uint(unsigned) { return static_cast<Override&>(*this).Default(); }
+        -:  208:    bool Int64(int64_t) { return static_cast<Override&>(*this).Default(); }
+        -:  209:    bool Uint64(uint64_t) { return static_cast<Override&>(*this).Default(); }
+        -:  210:    bool Double(double) { return static_cast<Override&>(*this).Default(); }
+        -:  211:    /// enabled via kParseNumbersAsStringsFlag, string is not null-terminated (use length)
+        -:  212:    bool RawNumber(const Ch* str, SizeType len, bool copy) { return static_cast<Override&>(*this).String(str, len, copy); }
+        -:  213:    bool String(const Ch*, SizeType, bool) { return static_cast<Override&>(*this).Default(); }
+        -:  214:    bool StartObject() { return static_cast<Override&>(*this).Default(); }
+        -:  215:    bool Key(const Ch* str, SizeType len, bool copy) { return static_cast<Override&>(*this).String(str, len, copy); }
+        -:  216:    bool EndObject(SizeType) { return static_cast<Override&>(*this).Default(); }
+        -:  217:    bool StartArray() { return static_cast<Override&>(*this).Default(); }
+        -:  218:    bool EndArray(SizeType) { return static_cast<Override&>(*this).Default(); }
+        -:  219:};
+        -:  220:
+        -:  221:///////////////////////////////////////////////////////////////////////////////
+        -:  222:// StreamLocalCopy
+        -:  223:
+        -:  224:namespace internal {
+        -:  225:
+        -:  226:template<typename Stream, int = StreamTraits<Stream>::copyOptimization>
+        -:  227:class StreamLocalCopy;
+        -:  228:
+        -:  229://! Do copy optimization.
+        -:  230:template<typename Stream>
+        -:  231:class StreamLocalCopy<Stream, 1> {
+        -:  232:public:
+function _ZN9rapidjson8internal15StreamLocalCopyINS_19GenericStringStreamINS_4UTF8IcEEEELi1EEC2ERS5_ called 48358 returned 100% blocks executed 100%
+    48358:  233:    StreamLocalCopy(Stream& original) : s(original), original_(original) {}
+function _ZN9rapidjson8internal15StreamLocalCopyINS_19GenericStringStreamINS_4UTF8IcEEEELi1EED2Ev called 48358 returned 100% blocks executed 100%
+    48358:  234:    ~StreamLocalCopy() { original_ = s; }
+        -:  235:
+        -:  236:    Stream s;
+        -:  237:
+        -:  238:private:
+        -:  239:    StreamLocalCopy& operator=(const StreamLocalCopy&) /* = delete */;
+        -:  240:
+        -:  241:    Stream& original_;
+        -:  242:};
+        -:  243:
+        -:  244://! Keep reference.
+        -:  245:template<typename Stream>
+        -:  246:class StreamLocalCopy<Stream, 0> {
+        -:  247:public:
+        -:  248:    StreamLocalCopy(Stream& original) : s(original) {}
+        -:  249:
+        -:  250:    Stream& s;
+        -:  251:
+        -:  252:private:
+        -:  253:    StreamLocalCopy& operator=(const StreamLocalCopy&) /* = delete */;
+        -:  254:};
+        -:  255:
+        -:  256:} // namespace internal
+        -:  257:
+        -:  258:///////////////////////////////////////////////////////////////////////////////
+        -:  259:// SkipWhitespace
+        -:  260:
+        -:  261://! Skip the JSON white spaces in a stream.
+        -:  262:/*! \param is A input stream for skipping white spaces.
+        -:  263:    \note This function has SSE2/SSE4.2 specialization.
+        -:  264:*/
+        -:  265:template<typename InputStream>
+function _ZN9rapidjson14SkipWhitespaceINS_19GenericStringStreamINS_4UTF8IcEEEEEEvRT_ called 34687 returned 100% blocks executed 100%
+    34687:  266:void SkipWhitespace(InputStream& is) {
+    69374:  267:    internal::StreamLocalCopy<InputStream> copy(is);
+    34687:  267-block  0
+call    0 returned 34687
+    34687:  267-block  1
+call    1 returned 34687
+    34687:  268:    InputStream& s(copy.s);
+        -:  269:
+        -:  270:    typename InputStream::Ch c;
+   230268:  271:    while ((c = s.Peek()) == ' ' || c == '\n' || c == '\r' || c == '\t')
+   230268:  271-block  0
+call    0 returned 230268
+branch  1 taken 34687 (fallthrough)
+branch  2 taken 195581
+    34687:  271-block  1
+branch  3 taken 34687 (fallthrough)
+branch  4 taken 0
+    34687:  271-block  2
+branch  5 taken 34687 (fallthrough)
+branch  6 taken 0
+    34687:  271-block  3
+branch  7 taken 0 (fallthrough)
+branch  8 taken 34687
+   195581:  271-block  4
+    34687:  271-block  5
+   230268:  271-block  6
+branch  9 taken 195581 (fallthrough)
+branch 10 taken 34687
+   195581:  272:        s.Take();
+   195581:  272-block  0
+call    0 returned 195581
+    34687:  273:}
+        -:  274:
+        -:  275:inline const char* SkipWhitespace(const char* p, const char* end) {
+        -:  276:    while (p != end && (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t'))
+        -:  277:        ++p;
+        -:  278:    return p;
+        -:  279:}
+        -:  280:
+        -:  281:#ifdef RAPIDJSON_SSE42
+        -:  282://! Skip whitespace with SSE 4.2 pcmpistrm instruction, testing 16 8-byte characters at once.
+        -:  283:inline const char *SkipWhitespace_SIMD(const char* p) {
+        -:  284:    // Fast return for single non-whitespace
+        -:  285:    if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+        -:  286:        ++p;
+        -:  287:    else
+        -:  288:        return p;
+        -:  289:
+        -:  290:    // 16-byte align to the next boundary
+        -:  291:    const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -:  292:    while (p != nextAligned)
+        -:  293:        if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+        -:  294:            ++p;
+        -:  295:        else
+        -:  296:            return p;
+        -:  297:
+        -:  298:    // The rest of string using SIMD
+        -:  299:    static const char whitespace[16] = " \n\r\t";
+        -:  300:    const __m128i w = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespace[0]));
+        -:  301:
+        -:  302:    for (;; p += 16) {
+        -:  303:        const __m128i s = _mm_load_si128(reinterpret_cast<const __m128i *>(p));
+        -:  304:        const int r = _mm_cmpistri(w, s, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT | _SIDD_NEGATIVE_POLARITY);
+        -:  305:        if (r != 16)    // some of characters is non-whitespace
+        -:  306:            return p + r;
+        -:  307:    }
+        -:  308:}
+        -:  309:
+        -:  310:inline const char *SkipWhitespace_SIMD(const char* p, const char* end) {
+        -:  311:    // Fast return for single non-whitespace
+        -:  312:    if (p != end && (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t'))
+        -:  313:        ++p;
+        -:  314:    else
+        -:  315:        return p;
+        -:  316:
+        -:  317:    // The middle of string using SIMD
+        -:  318:    static const char whitespace[16] = " \n\r\t";
+        -:  319:    const __m128i w = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespace[0]));
+        -:  320:
+        -:  321:    for (; p <= end - 16; p += 16) {
+        -:  322:        const __m128i s = _mm_loadu_si128(reinterpret_cast<const __m128i *>(p));
+        -:  323:        const int r = _mm_cmpistri(w, s, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_LEAST_SIGNIFICANT | _SIDD_NEGATIVE_POLARITY);
+        -:  324:        if (r != 16)    // some of characters is non-whitespace
+        -:  325:            return p + r;
+        -:  326:    }
+        -:  327:
+        -:  328:    return SkipWhitespace(p, end);
+        -:  329:}
+        -:  330:
+        -:  331:#elif defined(RAPIDJSON_SSE2)
+        -:  332:
+        -:  333://! Skip whitespace with SSE2 instructions, testing 16 8-byte characters at once.
+        -:  334:inline const char *SkipWhitespace_SIMD(const char* p) {
+        -:  335:    // Fast return for single non-whitespace
+        -:  336:    if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+        -:  337:        ++p;
+        -:  338:    else
+        -:  339:        return p;
+        -:  340:
+        -:  341:    // 16-byte align to the next boundary
+        -:  342:    const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -:  343:    while (p != nextAligned)
+        -:  344:        if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+        -:  345:            ++p;
+        -:  346:        else
+        -:  347:            return p;
+        -:  348:
+        -:  349:    // The rest of string
+        -:  350:    #define C16(c) { c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c }
+        -:  351:    static const char whitespaces[4][16] = { C16(' '), C16('\n'), C16('\r'), C16('\t') };
+        -:  352:    #undef C16
+        -:  353:
+        -:  354:    const __m128i w0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[0][0]));
+        -:  355:    const __m128i w1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[1][0]));
+        -:  356:    const __m128i w2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[2][0]));
+        -:  357:    const __m128i w3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[3][0]));
+        -:  358:
+        -:  359:    for (;; p += 16) {
+        -:  360:        const __m128i s = _mm_load_si128(reinterpret_cast<const __m128i *>(p));
+        -:  361:        __m128i x = _mm_cmpeq_epi8(s, w0);
+        -:  362:        x = _mm_or_si128(x, _mm_cmpeq_epi8(s, w1));
+        -:  363:        x = _mm_or_si128(x, _mm_cmpeq_epi8(s, w2));
+        -:  364:        x = _mm_or_si128(x, _mm_cmpeq_epi8(s, w3));
+        -:  365:        unsigned short r = static_cast<unsigned short>(~_mm_movemask_epi8(x));
+        -:  366:        if (r != 0) {   // some of characters may be non-whitespace
+        -:  367:#ifdef _MSC_VER         // Find the index of first non-whitespace
+        -:  368:            unsigned long offset;
+        -:  369:            _BitScanForward(&offset, r);
+        -:  370:            return p + offset;
+        -:  371:#else
+        -:  372:            return p + __builtin_ffs(r) - 1;
+        -:  373:#endif
+        -:  374:        }
+        -:  375:    }
+        -:  376:}
+        -:  377:
+        -:  378:inline const char *SkipWhitespace_SIMD(const char* p, const char* end) {
+        -:  379:    // Fast return for single non-whitespace
+        -:  380:    if (p != end && (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t'))
+        -:  381:        ++p;
+        -:  382:    else
+        -:  383:        return p;
+        -:  384:
+        -:  385:    // The rest of string
+        -:  386:    #define C16(c) { c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c }
+        -:  387:    static const char whitespaces[4][16] = { C16(' '), C16('\n'), C16('\r'), C16('\t') };
+        -:  388:    #undef C16
+        -:  389:
+        -:  390:    const __m128i w0 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[0][0]));
+        -:  391:    const __m128i w1 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[1][0]));
+        -:  392:    const __m128i w2 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[2][0]));
+        -:  393:    const __m128i w3 = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&whitespaces[3][0]));
+        -:  394:
+        -:  395:    for (; p <= end - 16; p += 16) {
+        -:  396:        const __m128i s = _mm_loadu_si128(reinterpret_cast<const __m128i *>(p));
+        -:  397:        __m128i x = _mm_cmpeq_epi8(s, w0);
+        -:  398:        x = _mm_or_si128(x, _mm_cmpeq_epi8(s, w1));
+        -:  399:        x = _mm_or_si128(x, _mm_cmpeq_epi8(s, w2));
+        -:  400:        x = _mm_or_si128(x, _mm_cmpeq_epi8(s, w3));
+        -:  401:        unsigned short r = static_cast<unsigned short>(~_mm_movemask_epi8(x));
+        -:  402:        if (r != 0) {   // some of characters may be non-whitespace
+        -:  403:#ifdef _MSC_VER         // Find the index of first non-whitespace
+        -:  404:            unsigned long offset;
+        -:  405:            _BitScanForward(&offset, r);
+        -:  406:            return p + offset;
+        -:  407:#else
+        -:  408:            return p + __builtin_ffs(r) - 1;
+        -:  409:#endif
+        -:  410:        }
+        -:  411:    }
+        -:  412:
+        -:  413:    return SkipWhitespace(p, end);
+        -:  414:}
+        -:  415:
+        -:  416:#elif defined(RAPIDJSON_NEON)
+        -:  417:
+        -:  418://! Skip whitespace with ARM Neon instructions, testing 16 8-byte characters at once.
+        -:  419:inline const char *SkipWhitespace_SIMD(const char* p) {
+        -:  420:    // Fast return for single non-whitespace
+        -:  421:    if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+        -:  422:        ++p;
+        -:  423:    else
+        -:  424:        return p;
+        -:  425:
+        -:  426:    // 16-byte align to the next boundary
+        -:  427:    const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -:  428:    while (p != nextAligned)
+        -:  429:        if (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t')
+        -:  430:            ++p;
+        -:  431:        else
+        -:  432:            return p;
+        -:  433:
+        -:  434:    const uint8x16_t w0 = vmovq_n_u8(' ');
+        -:  435:    const uint8x16_t w1 = vmovq_n_u8('\n');
+        -:  436:    const uint8x16_t w2 = vmovq_n_u8('\r');
+        -:  437:    const uint8x16_t w3 = vmovq_n_u8('\t');
+        -:  438:
+        -:  439:    for (;; p += 16) {
+        -:  440:        const uint8x16_t s = vld1q_u8(reinterpret_cast<const uint8_t *>(p));
+        -:  441:        uint8x16_t x = vceqq_u8(s, w0);
+        -:  442:        x = vorrq_u8(x, vceqq_u8(s, w1));
+        -:  443:        x = vorrq_u8(x, vceqq_u8(s, w2));
+        -:  444:        x = vorrq_u8(x, vceqq_u8(s, w3));
+        -:  445:
+        -:  446:        x = vmvnq_u8(x);                       // Negate
+        -:  447:        x = vrev64q_u8(x);                     // Rev in 64
+        -:  448:        uint64_t low = vgetq_lane_u64(vreinterpretq_u64_u8(x), 0);   // extract
+        -:  449:        uint64_t high = vgetq_lane_u64(vreinterpretq_u64_u8(x), 1);  // extract
+        -:  450:
+        -:  451:        if (low == 0) {
+        -:  452:            if (high != 0) {
+        -:  453:                uint32_t lz = internal::clzll(high);
+        -:  454:                return p + 8 + (lz >> 3);
+        -:  455:            }
+        -:  456:        } else {
+        -:  457:            uint32_t lz = internal::clzll(low);
+        -:  458:            return p + (lz >> 3);
+        -:  459:        }
+        -:  460:    }
+        -:  461:}
+        -:  462:
+        -:  463:inline const char *SkipWhitespace_SIMD(const char* p, const char* end) {
+        -:  464:    // Fast return for single non-whitespace
+        -:  465:    if (p != end && (*p == ' ' || *p == '\n' || *p == '\r' || *p == '\t'))
+        -:  466:        ++p;
+        -:  467:    else
+        -:  468:        return p;
+        -:  469:
+        -:  470:    const uint8x16_t w0 = vmovq_n_u8(' ');
+        -:  471:    const uint8x16_t w1 = vmovq_n_u8('\n');
+        -:  472:    const uint8x16_t w2 = vmovq_n_u8('\r');
+        -:  473:    const uint8x16_t w3 = vmovq_n_u8('\t');
+        -:  474:
+        -:  475:    for (; p <= end - 16; p += 16) {
+        -:  476:        const uint8x16_t s = vld1q_u8(reinterpret_cast<const uint8_t *>(p));
+        -:  477:        uint8x16_t x = vceqq_u8(s, w0);
+        -:  478:        x = vorrq_u8(x, vceqq_u8(s, w1));
+        -:  479:        x = vorrq_u8(x, vceqq_u8(s, w2));
+        -:  480:        x = vorrq_u8(x, vceqq_u8(s, w3));
+        -:  481:
+        -:  482:        x = vmvnq_u8(x);                       // Negate
+        -:  483:        x = vrev64q_u8(x);                     // Rev in 64
+        -:  484:        uint64_t low = vgetq_lane_u64(vreinterpretq_u64_u8(x), 0);   // extract
+        -:  485:        uint64_t high = vgetq_lane_u64(vreinterpretq_u64_u8(x), 1);  // extract
+        -:  486:
+        -:  487:        if (low == 0) {
+        -:  488:            if (high != 0) {
+        -:  489:                uint32_t lz = internal::clzll(high);
+        -:  490:                return p + 8 + (lz >> 3);
+        -:  491:            }
+        -:  492:        } else {
+        -:  493:            uint32_t lz = internal::clzll(low);
+        -:  494:            return p + (lz >> 3);
+        -:  495:        }
+        -:  496:    }
+        -:  497:
+        -:  498:    return SkipWhitespace(p, end);
+        -:  499:}
+        -:  500:
+        -:  501:#endif // RAPIDJSON_NEON
+        -:  502:
+        -:  503:#ifdef RAPIDJSON_SIMD
+        -:  504://! Template function specialization for InsituStringStream
+        -:  505:template<> inline void SkipWhitespace(InsituStringStream& is) {
+        -:  506:    is.src_ = const_cast<char*>(SkipWhitespace_SIMD(is.src_));
+        -:  507:}
+        -:  508:
+        -:  509://! Template function specialization for StringStream
+        -:  510:template<> inline void SkipWhitespace(StringStream& is) {
+        -:  511:    is.src_ = SkipWhitespace_SIMD(is.src_);
+        -:  512:}
+        -:  513:
+        -:  514:template<> inline void SkipWhitespace(EncodedInputStream<UTF8<>, MemoryStream>& is) {
+        -:  515:    is.is_.src_ = SkipWhitespace_SIMD(is.is_.src_, is.is_.end_);
+        -:  516:}
+        -:  517:#endif // RAPIDJSON_SIMD
+        -:  518:
+        -:  519:///////////////////////////////////////////////////////////////////////////////
+        -:  520:// GenericReader
+        -:  521:
+        -:  522://! SAX-style JSON parser. Use \ref Reader for UTF8 encoding and default allocator.
+        -:  523:/*! GenericReader parses JSON text from a stream, and send events synchronously to an
+        -:  524:    object implementing Handler concept.
+        -:  525:
+        -:  526:    It needs to allocate a stack for storing a single decoded string during
+        -:  527:    non-destructive parsing.
+        -:  528:
+        -:  529:    For in-situ parsing, the decoded string is directly written to the source
+        -:  530:    text string, no temporary buffer is required.
+        -:  531:
+        -:  532:    A GenericReader object can be reused for parsing multiple JSON text.
+        -:  533:
+        -:  534:    \tparam SourceEncoding Encoding of the input stream.
+        -:  535:    \tparam TargetEncoding Encoding of the parse output.
+        -:  536:    \tparam StackAllocator Allocator type for stack.
+        -:  537:*/
+        -:  538:template <typename SourceEncoding, typename TargetEncoding, typename StackAllocator = CrtAllocator>
+        -:  539:class GenericReader {
+        -:  540:public:
+        -:  541:    typedef typename SourceEncoding::Ch Ch; //!< SourceEncoding character type
+        -:  542:
+        -:  543:    //! Constructor.
+        -:  544:    /*! \param stackAllocator Optional allocator for allocating stack memory. (Only use for non-destructive parsing)
+        -:  545:        \param stackCapacity stack capacity in bytes for storing a single decoded string.  (Only use for non-destructive parsing)
+        -:  546:    */
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEEC2EPS3_m called 5 returned 100% blocks executed 100%
+        5:  547:    GenericReader(StackAllocator* stackAllocator = 0, size_t stackCapacity = kDefaultStackCapacity) :
+        5:  548:        stack_(stackAllocator, stackCapacity), parseResult_(), state_(IterativeParsingStartState) {}
+        5:  548-block  0
+call    0 returned 5
+call    1 returned 5
+        -:  549:
+        -:  550:    //! Parse JSON text.
+        -:  551:    /*! \tparam parseFlags Combination of \ref ParseFlag.
+        -:  552:        \tparam InputStream Type of input stream, implementing Stream concept.
+        -:  553:        \tparam Handler Type of handler, implementing Handler concept.
+        -:  554:        \param is Input stream to be parsed.
+        -:  555:        \param handler The handler to receive events.
+        -:  556:        \return Whether the parsing is successful.
+        -:  557:    */
+        -:  558:    template <unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE5ParseILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEENS_11ParseResultERT0_RT1_ called 5 returned 100% blocks executed 50%
+        5:  559:    ParseResult Parse(InputStream& is, Handler& handler) {
+        5:  559-block  0
+        -:  560:        if (parseFlags & kParseIterativeFlag)
+        -:  561:            return IterativeParse<parseFlags>(is, handler);
+        -:  562:
+        5:  563:        parseResult_.Clear();
+        5:  563-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        -:  564:
+       10:  565:        ClearStackOnExit scope(*this);
+        5:  565-block  0
+call    0 returned 5
+        5:  565-block  1
+call    1 returned 5
+    $$$$$:  565-block  2
+call    2 never executed
+        -:  566:
+        5:  567:        SkipWhitespaceAndComments<parseFlags>(is);
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+       5*:  568:        RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        5:  568-block  0
+call    0 returned 5
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5
+    %%%%%:  568-block  1
+        -:  569:
+        5:  570:        if (RAPIDJSON_UNLIKELY(is.Peek() == '\0')) {
+        5:  570-block  0
+call    0 returned 5
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5
+    #####:  571:            RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorDocumentEmpty, is.Tell());
+    %%%%%:  571-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  571-block  1
+call    3 never executed
+    %%%%%:  571-block  2
+call    4 never executed
+call    5 never executed
+    #####:  572:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  572-block  0
+        -:  573:        }
+        -:  574:        else {
+        5:  575:            ParseValue<parseFlags>(is, handler);
+        5:  575-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+       5*:  576:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        5:  576-block  0
+call    0 returned 5
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5
+    %%%%%:  576-block  1
+        -:  577:
+        -:  578:            if (!(parseFlags & kParseStopWhenDoneFlag)) {
+        5:  579:                SkipWhitespaceAndComments<parseFlags>(is);
+        5:  579-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+       5*:  580:                RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        5:  580-block  0
+call    0 returned 5
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5
+    %%%%%:  580-block  1
+        -:  581:
+        5:  582:                if (RAPIDJSON_UNLIKELY(is.Peek() != '\0')) {
+        5:  582-block  0
+call    0 returned 5
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5
+    #####:  583:                    RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorDocumentRootNotSingular, is.Tell());
+    %%%%%:  583-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  583-block  1
+call    3 never executed
+    %%%%%:  583-block  2
+call    4 never executed
+call    5 never executed
+    #####:  584:                    RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  584-block  0
+        -:  585:                }
+        -:  586:            }
+        -:  587:        }
+        -:  588:
+        5:  589:        return parseResult_;
+        5:  589-block  0
+        -:  590:    }
+        -:  591:
+        -:  592:    //! Parse JSON text (with \ref kParseDefaultFlags)
+        -:  593:    /*! \tparam InputStream Type of input stream, implementing Stream concept
+        -:  594:        \tparam Handler Type of handler, implementing Handler concept.
+        -:  595:        \param is Input stream to be parsed.
+        -:  596:        \param handler The handler to receive events.
+        -:  597:        \return Whether the parsing is successful.
+        -:  598:    */
+        -:  599:    template <typename InputStream, typename Handler>
+        -:  600:    ParseResult Parse(InputStream& is, Handler& handler) {
+        -:  601:        return Parse<kParseDefaultFlags>(is, handler);
+        -:  602:    }
+        -:  603:
+        -:  604:    //! Initialize JSON text token-by-token parsing
+        -:  605:    /*!
+        -:  606:     */
+        -:  607:    void IterativeParseInit() {
+        -:  608:        parseResult_.Clear();
+        -:  609:        state_ = IterativeParsingStartState;
+        -:  610:    }
+        -:  611:
+        -:  612:    //! Parse one token from JSON text
+        -:  613:    /*! \tparam InputStream Type of input stream, implementing Stream concept
+        -:  614:        \tparam Handler Type of handler, implementing Handler concept.
+        -:  615:        \param is Input stream to be parsed.
+        -:  616:        \param handler The handler to receive events.
+        -:  617:        \return Whether the parsing is successful.
+        -:  618:     */
+        -:  619:    template <unsigned parseFlags, typename InputStream, typename Handler>
+        -:  620:    bool IterativeParseNext(InputStream& is, Handler& handler) {
+        -:  621:        while (RAPIDJSON_LIKELY(is.Peek() != '\0')) {
+        -:  622:            SkipWhitespaceAndComments<parseFlags>(is);
+        -:  623:
+        -:  624:            Token t = Tokenize(is.Peek());
+        -:  625:            IterativeParsingState n = Predict(state_, t);
+        -:  626:            IterativeParsingState d = Transit<parseFlags>(state_, t, n, is, handler);
+        -:  627:
+        -:  628:            // If we've finished or hit an error...
+        -:  629:            if (RAPIDJSON_UNLIKELY(IsIterativeParsingCompleteState(d))) {
+        -:  630:                // Report errors.
+        -:  631:                if (d == IterativeParsingErrorState) {
+        -:  632:                    HandleError(state_, is);
+        -:  633:                    return false;
+        -:  634:                }
+        -:  635:
+        -:  636:                // Transition to the finish state.
+        -:  637:                RAPIDJSON_ASSERT(d == IterativeParsingFinishState);
+        -:  638:                state_ = d;
+        -:  639:
+        -:  640:                // If StopWhenDone is not set...
+        -:  641:                if (!(parseFlags & kParseStopWhenDoneFlag)) {
+        -:  642:                    // ... and extra non-whitespace data is found...
+        -:  643:                    SkipWhitespaceAndComments<parseFlags>(is);
+        -:  644:                    if (is.Peek() != '\0') {
+        -:  645:                        // ... this is considered an error.
+        -:  646:                        HandleError(state_, is);
+        -:  647:                        return false;
+        -:  648:                    }
+        -:  649:                }
+        -:  650:
+        -:  651:                // Success! We are done!
+        -:  652:                return true;
+        -:  653:            }
+        -:  654:
+        -:  655:            // Transition to the new state.
+        -:  656:            state_ = d;
+        -:  657:
+        -:  658:            // If we parsed anything other than a delimiter, we invoked the handler, so we can return true now.
+        -:  659:            if (!IsIterativeParsingDelimiterState(n))
+        -:  660:                return true;
+        -:  661:        }
+        -:  662:
+        -:  663:        // We reached the end of file.
+        -:  664:        stack_.Clear();
+        -:  665:
+        -:  666:        if (state_ != IterativeParsingFinishState) {
+        -:  667:            HandleError(state_, is);
+        -:  668:            return false;
+        -:  669:        }
+        -:  670:
+        -:  671:        return true;
+        -:  672:    }
+        -:  673:
+        -:  674:    //! Check if token-by-token parsing JSON text is complete
+        -:  675:    /*! \return Whether the JSON has been fully decoded.
+        -:  676:     */
+        -:  677:    RAPIDJSON_FORCEINLINE bool IterativeParseComplete() const {
+        -:  678:        return IsIterativeParsingCompleteState(state_);
+        -:  679:    }
+        -:  680:
+        -:  681:    //! Whether a parse error has occurred in the last parsing.
+function _ZNK9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE13HasParseErrorEv called 64518 returned 100% blocks executed 100%
+    64518:  682:    bool HasParseError() const { return parseResult_.IsError(); }
+    64518:  682-block  0
+call    0 returned 64518
+        -:  683:
+        -:  684:    //! Get the \ref ParseErrorCode of last parsing.
+        -:  685:    ParseErrorCode GetParseErrorCode() const { return parseResult_.Code(); }
+        -:  686:
+        -:  687:    //! Get the position of last parsing error in input, 0 otherwise.
+        -:  688:    size_t GetErrorOffset() const { return parseResult_.Offset(); }
+        -:  689:
+        -:  690:protected:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE13SetParseErrorENS_14ParseErrorCodeEm called 0 returned 0% blocks executed 0%
+    #####:  691:    void SetParseError(ParseErrorCode code, size_t offset) { parseResult_.Set(code, offset); }
+    %%%%%:  691-block  0
+call    0 never executed
+        -:  692:
+        -:  693:private:
+        -:  694:    // Prohibit copy constructor & assignment operator.
+        -:  695:    GenericReader(const GenericReader&);
+        -:  696:    GenericReader& operator=(const GenericReader&);
+        -:  697:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE10ClearStackEv called 5 returned 100% blocks executed 100%
+        5:  698:    void ClearStack() { stack_.Clear(); }
+        5:  698-block  0
+call    0 returned 5
+        -:  699:
+        -:  700:    // clear stack on any exit from ParseStream, e.g. due to exception
+        -:  701:    struct ClearStackOnExit {
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE16ClearStackOnExitC2ERS4_ called 5 returned 100% blocks executed 100%
+        5:  702:        explicit ClearStackOnExit(GenericReader& r) : r_(r) {}
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE16ClearStackOnExitD2Ev called 5 returned 100% blocks executed 100%
+        5:  703:        ~ClearStackOnExit() { r_.ClearStack(); }
+        5:  703-block  0
+call    0 returned 5
+        -:  704:    private:
+        -:  705:        GenericReader& r_;
+        -:  706:        ClearStackOnExit(const ClearStackOnExit&);
+        -:  707:        ClearStackOnExit& operator=(const ClearStackOnExit&);
+        -:  708:    };
+        -:  709:
+        -:  710:    template<unsigned parseFlags, typename InputStream>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE25SkipWhitespaceAndCommentsILj0ENS_19GenericStringStreamIS2_EEEEvRT0_ called 34687 returned 100% blocks executed 100%
+    34687:  711:    void SkipWhitespaceAndComments(InputStream& is) {
+    34687:  712:        SkipWhitespace(is);
+    34687:  712-block  0
+call    0 returned 34687
+        -:  713:
+        -:  714:        if (parseFlags & kParseCommentsFlag) {
+        -:  715:            while (RAPIDJSON_UNLIKELY(Consume(is, '/'))) {
+        -:  716:                if (Consume(is, '*')) {
+        -:  717:                    while (true) {
+        -:  718:                        if (RAPIDJSON_UNLIKELY(is.Peek() == '\0'))
+        -:  719:                            RAPIDJSON_PARSE_ERROR(kParseErrorUnspecificSyntaxError, is.Tell());
+        -:  720:                        else if (Consume(is, '*')) {
+        -:  721:                            if (Consume(is, '/'))
+        -:  722:                                break;
+        -:  723:                        }
+        -:  724:                        else
+        -:  725:                            is.Take();
+        -:  726:                    }
+        -:  727:                }
+        -:  728:                else if (RAPIDJSON_LIKELY(Consume(is, '/')))
+        -:  729:                    while (is.Peek() != '\0' && is.Take() != '\n') {}
+        -:  730:                else
+        -:  731:                    RAPIDJSON_PARSE_ERROR(kParseErrorUnspecificSyntaxError, is.Tell());
+        -:  732:
+        -:  733:                SkipWhitespace(is);
+        -:  734:            }
+        -:  735:        }
+        -:  736:    }
+        -:  737:
+        -:  738:    // Parse object: { string : value, ... }
+        -:  739:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11ParseObjectILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 1821 returned 100% blocks executed 45%
+     1821:  740:    void ParseObject(InputStream& is, Handler& handler) {
+    1821*:  741:        RAPIDJSON_ASSERT(is.Peek() == '{');
+     1821:  741-block  0
+call    0 returned 1821
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1821
+    %%%%%:  741-block  1
+call    3 never executed
+     1821:  742:        is.Take();  // Skip '{'
+     1821:  742-block  0
+call    0 returned 1821
+        -:  743:
+     1821:  744:        if (RAPIDJSON_UNLIKELY(!handler.StartObject()))
+call    0 returned 1821
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1821
+    #####:  745:            RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  745-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  745-block  1
+call    3 never executed
+    %%%%%:  745-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  745-block  3
+        -:  746:
+     1821:  747:        SkipWhitespaceAndComments<parseFlags>(is);
+     1821:  747-block  0
+call    0 returned 1821
+    1821*:  748:        RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 1821
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1821
+    %%%%%:  748-block  0
+        -:  749:
+     1821:  750:        if (Consume(is, '}')) {
+     1821:  750-block  0
+call    0 returned 1821
+branch  1 taken 183 (fallthrough)
+branch  2 taken 1638
+      183:  751:            if (RAPIDJSON_UNLIKELY(!handler.EndObject(0)))  // empty object
+      183:  751-block  0
+call    0 returned 183
+branch  1 taken 0 (fallthrough)
+branch  2 taken 183
+    #####:  752:                RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  752-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  752-block  1
+call    3 never executed
+    %%%%%:  752-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  752-block  3
+      183:  753:            return;
+      183:  753-block  0
+        -:  754:        }
+        -:  755:
+     1638:  756:        for (SizeType memberCount = 0;;) {
+     1638:  756-block  0
+     7637:  757:            if (RAPIDJSON_UNLIKELY(is.Peek() != '"'))
+     7637:  757-block  0
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    #####:  758:                RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell());
+    %%%%%:  758-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  758-block  1
+call    3 never executed
+    %%%%%:  758-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  758-block  3
+        -:  759:
+     7637:  760:            ParseString<parseFlags>(is, handler, true);
+     7637:  760-block  0
+call    0 returned 7637
+    7637*:  761:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    %%%%%:  761-block  0
+        -:  762:
+     7637:  763:            SkipWhitespaceAndComments<parseFlags>(is);
+     7637:  763-block  0
+call    0 returned 7637
+    7637*:  764:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    %%%%%:  764-block  0
+        -:  765:
+     7637:  766:            if (RAPIDJSON_UNLIKELY(!Consume(is, ':')))
+     7637:  766-block  0
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    #####:  767:                RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell());
+    %%%%%:  767-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  767-block  1
+call    3 never executed
+    %%%%%:  767-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  767-block  3
+        -:  768:
+     7637:  769:            SkipWhitespaceAndComments<parseFlags>(is);
+     7637:  769-block  0
+call    0 returned 7637
+    7637*:  770:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    %%%%%:  770-block  0
+        -:  771:
+     7637:  772:            ParseValue<parseFlags>(is, handler);
+     7637:  772-block  0
+call    0 returned 7637
+    7637*:  773:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    %%%%%:  773-block  0
+        -:  774:
+     7637:  775:            SkipWhitespaceAndComments<parseFlags>(is);
+     7637:  775-block  0
+call    0 returned 7637
+    7637*:  776:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 7637
+branch  1 taken 0 (fallthrough)
+branch  2 taken 7637
+    %%%%%:  776-block  0
+        -:  777:
+     7637:  778:            ++memberCount;
+        -:  779:
+     7637:  780:            switch (is.Peek()) {
+     7637:  780-block  0
+call    0 returned 7637
+branch  1 taken 5999
+branch  2 taken 1638
+branch  3 taken 0
+     5999:  781:                case ',':
+     5999:  782:                    is.Take();
+     5999:  782-block  0
+call    0 returned 5999
+     5999:  783:                    SkipWhitespaceAndComments<parseFlags>(is);
+call    0 returned 5999
+    5999*:  784:                    RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 5999
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5999
+    %%%%%:  784-block  0
+     5999:  785:                    break;
+     5999:  785-block  0
+     1638:  786:                case '}':
+     1638:  787:                    is.Take();
+     1638:  787-block  0
+call    0 returned 1638
+     1638:  788:                    if (RAPIDJSON_UNLIKELY(!handler.EndObject(memberCount)))
+call    0 returned 1638
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1638
+    #####:  789:                        RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  789-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  789-block  1
+call    3 never executed
+    %%%%%:  789-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  789-block  3
+     1638:  790:                    return;
+     1638:  790-block  0
+    #####:  791:                default:
+    #####:  792:                    RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); break; // This useless break is only for making warning and coverage happy
+    %%%%%:  792-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  792-block  1
+call    3 never executed
+    %%%%%:  792-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  792-block  3
+    %%%%%:  792-block  4
+        -:  793:            }
+        -:  794:
+        -:  795:            if (parseFlags & kParseTrailingCommasFlag) {
+        -:  796:                if (is.Peek() == '}') {
+        -:  797:                    if (RAPIDJSON_UNLIKELY(!handler.EndObject(memberCount)))
+        -:  798:                        RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        -:  799:                    is.Take();
+        -:  800:                    return;
+        -:  801:                }
+        -:  802:            }
+        -:  803:        }
+        -:  804:    }
+        -:  805:
+        -:  806:    // Parse array: [ value, ... ]
+        -:  807:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE10ParseArrayILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 1346 returned 100% blocks executed 46%
+     1346:  808:    void ParseArray(InputStream& is, Handler& handler) {
+    1346*:  809:        RAPIDJSON_ASSERT(is.Peek() == '[');
+     1346:  809-block  0
+call    0 returned 1346
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1346
+    %%%%%:  809-block  1
+call    3 never executed
+     1346:  810:        is.Take();  // Skip '['
+     1346:  810-block  0
+call    0 returned 1346
+        -:  811:
+     1346:  812:        if (RAPIDJSON_UNLIKELY(!handler.StartArray()))
+call    0 returned 1346
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1346
+    #####:  813:            RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  813-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  813-block  1
+call    3 never executed
+    %%%%%:  813-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  813-block  3
+        -:  814:
+     1346:  815:        SkipWhitespaceAndComments<parseFlags>(is);
+     1346:  815-block  0
+call    0 returned 1346
+    1346*:  816:        RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 1346
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1346
+    %%%%%:  816-block  0
+        -:  817:
+     1346:  818:        if (Consume(is, ']')) {
+     1346:  818-block  0
+call    0 returned 1346
+branch  1 taken 718 (fallthrough)
+branch  2 taken 628
+      718:  819:            if (RAPIDJSON_UNLIKELY(!handler.EndArray(0))) // empty array
+      718:  819-block  0
+call    0 returned 718
+branch  1 taken 0 (fallthrough)
+branch  2 taken 718
+    #####:  820:                RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  820-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  820-block  1
+call    3 never executed
+    %%%%%:  820-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  820-block  3
+      718:  821:            return;
+      718:  821-block  0
+        -:  822:        }
+        -:  823:
+      628:  824:        for (SizeType elementCount = 0;;) {
+      628:  824-block  0
+     1614:  825:            ParseValue<parseFlags>(is, handler);
+     1614:  825-block  0
+call    0 returned 1614
+    1614*:  826:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 1614
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1614
+    %%%%%:  826-block  0
+        -:  827:
+     1614:  828:            ++elementCount;
+     1614:  829:            SkipWhitespaceAndComments<parseFlags>(is);
+     1614:  829-block  0
+call    0 returned 1614
+    1614*:  830:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 1614
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1614
+    %%%%%:  830-block  0
+        -:  831:
+     1614:  832:            if (Consume(is, ',')) {
+     1614:  832-block  0
+call    0 returned 1614
+branch  1 taken 986 (fallthrough)
+branch  2 taken 628
+      986:  833:                SkipWhitespaceAndComments<parseFlags>(is);
+      986:  833-block  0
+call    0 returned 986
+     986*:  834:                RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 986
+branch  1 taken 0 (fallthrough)
+branch  2 taken 986
+    %%%%%:  834-block  0
+        -:  835:            }
+      628:  836:            else if (Consume(is, ']')) {
+      628:  836-block  0
+call    0 returned 628
+branch  1 taken 628 (fallthrough)
+branch  2 taken 0
+      628:  837:                if (RAPIDJSON_UNLIKELY(!handler.EndArray(elementCount)))
+      628:  837-block  0
+call    0 returned 628
+branch  1 taken 0 (fallthrough)
+branch  2 taken 628
+    #####:  838:                    RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  838-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  838-block  1
+call    3 never executed
+    %%%%%:  838-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  838-block  3
+      628:  839:                return;
+      628:  839-block  0
+        -:  840:            }
+        -:  841:            else
+    #####:  842:                RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell());
+    %%%%%:  842-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  842-block  1
+call    3 never executed
+    %%%%%:  842-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  842-block  3
+        -:  843:
+        -:  844:            if (parseFlags & kParseTrailingCommasFlag) {
+        -:  845:                if (is.Peek() == ']') {
+        -:  846:                    if (RAPIDJSON_UNLIKELY(!handler.EndArray(elementCount)))
+        -:  847:                        RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+        -:  848:                    is.Take();
+        -:  849:                    return;
+        -:  850:                }
+        -:  851:            }
+        -:  852:        }
+        -:  853:    }
+        -:  854:
+        -:  855:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE9ParseNullILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 55 returned 100% blocks executed 46%
+       55:  856:    void ParseNull(InputStream& is, Handler& handler) {
+      55*:  857:        RAPIDJSON_ASSERT(is.Peek() == 'n');
+       55:  857-block  0
+call    0 returned 55
+branch  1 taken 0 (fallthrough)
+branch  2 taken 55
+    %%%%%:  857-block  1
+call    3 never executed
+       55:  858:        is.Take();
+       55:  858-block  0
+call    0 returned 55
+        -:  859:
+      55*:  860:        if (RAPIDJSON_LIKELY(Consume(is, 'u') && Consume(is, 'l') && Consume(is, 'l'))) {
+call    0 returned 55
+branch  1 taken 55 (fallthrough)
+branch  2 taken 0
+       55:  860-block  0
+call    3 returned 55
+branch  4 taken 55 (fallthrough)
+branch  5 taken 0
+       55:  860-block  1
+    %%%%%:  860-block  2
+       55:  860-block  3
+branch  6 taken 55 (fallthrough)
+branch  7 taken 0
+       55:  860-block  4
+call    8 returned 55
+branch  9 taken 55 (fallthrough)
+branch 10 taken 0
+       55:  860-block  5
+    %%%%%:  860-block  6
+       55:  860-block  7
+branch 11 taken 55 (fallthrough)
+branch 12 taken 0
+       55:  861:            if (RAPIDJSON_UNLIKELY(!handler.Null()))
+       55:  861-block  0
+call    0 returned 55
+branch  1 taken 0 (fallthrough)
+branch  2 taken 55
+    #####:  862:                RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  862-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  862-block  1
+call    3 never executed
+    %%%%%:  862-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  862-block  3
+        -:  863:        }
+        -:  864:        else
+    #####:  865:            RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
+    %%%%%:  865-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  865-block  1
+call    3 never executed
+    %%%%%:  865-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  865-block  3
+        -:  866:    }
+        -:  867:
+        -:  868:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE9ParseTrueILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 0 returned 0% blocks executed 0%
+    #####:  869:    void ParseTrue(InputStream& is, Handler& handler) {
+    #####:  870:        RAPIDJSON_ASSERT(is.Peek() == 't');
+    %%%%%:  870-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  870-block  1
+call    3 never executed
+    #####:  871:        is.Take();
+    %%%%%:  871-block  0
+call    0 never executed
+        -:  872:
+    #####:  873:        if (RAPIDJSON_LIKELY(Consume(is, 'r') && Consume(is, 'u') && Consume(is, 'e'))) {
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  873-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  873-block  1
+    %%%%%:  873-block  2
+    %%%%%:  873-block  3
+branch  6 never executed
+branch  7 never executed
+    %%%%%:  873-block  4
+call    8 never executed
+branch  9 never executed
+branch 10 never executed
+    %%%%%:  873-block  5
+    %%%%%:  873-block  6
+    %%%%%:  873-block  7
+branch 11 never executed
+branch 12 never executed
+    #####:  874:            if (RAPIDJSON_UNLIKELY(!handler.Bool(true)))
+    %%%%%:  874-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  875:                RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  875-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  875-block  1
+call    3 never executed
+    %%%%%:  875-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  875-block  3
+        -:  876:        }
+        -:  877:        else
+    #####:  878:            RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
+    %%%%%:  878-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  878-block  1
+call    3 never executed
+    %%%%%:  878-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  878-block  3
+        -:  879:    }
+        -:  880:
+        -:  881:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE10ParseFalseILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 0 returned 0% blocks executed 0%
+    #####:  882:    void ParseFalse(InputStream& is, Handler& handler) {
+    #####:  883:        RAPIDJSON_ASSERT(is.Peek() == 'f');
+    %%%%%:  883-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  883-block  1
+call    3 never executed
+    #####:  884:        is.Take();
+    %%%%%:  884-block  0
+call    0 never executed
+        -:  885:
+    #####:  886:        if (RAPIDJSON_LIKELY(Consume(is, 'a') && Consume(is, 'l') && Consume(is, 's') && Consume(is, 'e'))) {
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  886-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  886-block  1
+    %%%%%:  886-block  2
+    %%%%%:  886-block  3
+branch  6 never executed
+branch  7 never executed
+    %%%%%:  886-block  4
+call    8 never executed
+branch  9 never executed
+branch 10 never executed
+    %%%%%:  886-block  5
+    %%%%%:  886-block  6
+    %%%%%:  886-block  7
+branch 11 never executed
+branch 12 never executed
+    %%%%%:  886-block  8
+call   13 never executed
+branch 14 never executed
+branch 15 never executed
+    %%%%%:  886-block  9
+    %%%%%:  886-block 10
+    %%%%%:  886-block 11
+branch 16 never executed
+branch 17 never executed
+    #####:  887:            if (RAPIDJSON_UNLIKELY(!handler.Bool(false)))
+    %%%%%:  887-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  888:                RAPIDJSON_PARSE_ERROR(kParseErrorTermination, is.Tell());
+    %%%%%:  888-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  888-block  1
+call    3 never executed
+    %%%%%:  888-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  888-block  3
+        -:  889:        }
+        -:  890:        else
+    #####:  891:            RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell());
+    %%%%%:  891-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  891-block  1
+call    3 never executed
+    %%%%%:  891-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  891-block  3
+        -:  892:    }
+        -:  893:
+        -:  894:    template<typename InputStream>
+    16599:  895:    RAPIDJSON_FORCEINLINE static bool Consume(InputStream& is, typename InputStream::Ch expect) {
+    16599:  896:        if (RAPIDJSON_LIKELY(is.Peek() == expect)) {
+   10317*:  897:            is.Take();
+   10317*:  898:            return true;
+        -:  899:        }
+        -:  900:        else
+     6282:  901:            return false;
+        -:  902:    }
+------------------
+_ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE7ConsumeINS4_12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EEEEEbRT_NSA_2ChE:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE7ConsumeINS4_12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EEEEEbRT_NSA_2ChE called 3388 returned 100% blocks executed 67%
+     3388:  895:    RAPIDJSON_FORCEINLINE static bool Consume(InputStream& is, typename InputStream::Ch expect) {
+     3388:  896:        if (RAPIDJSON_LIKELY(is.Peek() == expect)) {
+     3388:  896-block  0
+call    0 returned 3388
+branch  1 taken 0 (fallthrough)
+branch  2 taken 3388
+    #####:  897:            is.Take();
+    %%%%%:  897-block  0
+call    0 never executed
+    #####:  898:            return true;
+        -:  899:        }
+        -:  900:        else
+     3388:  901:            return false;
+     3388:  901-block  0
+        -:  902:    }
+------------------
+_ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE7ConsumeINS_19GenericStringStreamIS2_EEEEbRT_NS8_2ChE:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE7ConsumeINS_19GenericStringStreamIS2_EEEEbRT_NS8_2ChE called 13211 returned 100% blocks executed 100%
+    13211:  895:    RAPIDJSON_FORCEINLINE static bool Consume(InputStream& is, typename InputStream::Ch expect) {
+    13211:  896:        if (RAPIDJSON_LIKELY(is.Peek() == expect)) {
+    13211:  896-block  0
+call    0 returned 13211
+branch  1 taken 10317 (fallthrough)
+branch  2 taken 2894
+    10317:  897:            is.Take();
+    10317:  897-block  0
+call    0 returned 10317
+    10317:  898:            return true;
+        -:  899:        }
+        -:  900:        else
+     2894:  901:            return false;
+     2894:  901-block  0
+        -:  902:    }
+------------------
+        -:  903:
+        -:  904:    // Helper function to parse four hexadecimal digits in \uXXXX in ParseString().
+        -:  905:    template<typename InputStream>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE9ParseHex4INS_19GenericStringStreamIS2_EEEEjRT_m called 114 returned 100% blocks executed 65%
+      114:  906:    unsigned ParseHex4(InputStream& is, size_t escapeOffset) {
+      114:  907:        unsigned codepoint = 0;
+      570:  908:        for (int i = 0; i < 4; i++) {
+      114:  908-block  0
+      570:  908-block  1
+branch  0 taken 456 (fallthrough)
+branch  1 taken 114
+      456:  909:            Ch c = is.Peek();
+      456:  909-block  0
+call    0 returned 456
+      456:  910:            codepoint <<= 4;
+      456:  911:            codepoint += static_cast<unsigned>(c);
+      456:  912:            if (c >= '0' && c <= '9')
+branch  0 taken 456 (fallthrough)
+branch  1 taken 0
+      456:  912-block  0
+branch  2 taken 317 (fallthrough)
+branch  3 taken 139
+      317:  913:                codepoint -= '0';
+      317:  913-block  0
+      139:  914:            else if (c >= 'A' && c <= 'F')
+      139:  914-block  0
+branch  0 taken 139 (fallthrough)
+branch  1 taken 0
+      139:  914-block  1
+branch  2 taken 0 (fallthrough)
+branch  3 taken 139
+    #####:  915:                codepoint -= 'A' - 10;
+    %%%%%:  915-block  0
+      139:  916:            else if (c >= 'a' && c <= 'f')
+      139:  916-block  0
+branch  0 taken 139 (fallthrough)
+branch  1 taken 0
+      139:  916-block  1
+branch  2 taken 139 (fallthrough)
+branch  3 taken 0
+      139:  917:                codepoint -= 'a' - 10;
+      139:  917-block  0
+        -:  918:            else {
+    #####:  919:                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorStringUnicodeEscapeInvalidHex, escapeOffset);
+    %%%%%:  919-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  919-block  1
+call    3 never executed
+    %%%%%:  919-block  2
+call    4 never executed
+    #####:  920:                RAPIDJSON_PARSE_ERROR_EARLY_RETURN(0);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  920-block  0
+        -:  921:            }
+      456:  922:            is.Take();
+      456:  922-block  0
+call    0 returned 456
+        -:  923:        }
+      114:  924:        return codepoint;
+      114:  924-block  0
+        -:  925:    }
+        -:  926:
+        -:  927:    template <typename CharType>
+        -:  928:    class StackStream {
+        -:  929:    public:
+        -:  930:        typedef CharType Ch;
+        -:  931:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11StackStreamIcEC2ERNS_8internal5StackIS3_EE called 12824 returned 100% blocks executed 100%
+    12824:  932:        StackStream(internal::Stack<StackAllocator>& stack) : stack_(stack), length_(0) {}
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11StackStreamIcE3PutEc called 240101 returned 100% blocks executed 100%
+   240101:  933:        RAPIDJSON_FORCEINLINE void Put(Ch c) {
+   240101:  934:            *stack_.template Push<Ch>() = c;
+   240101:  934-block  0
+call    0 returned 240101
+   240101:  935:            ++length_;
+   240101:  936:        }
+        -:  937:
+        -:  938:        RAPIDJSON_FORCEINLINE void* Push(SizeType count) {
+        -:  939:            length_ += count;
+        -:  940:            return stack_.template Push<Ch>(count);
+        -:  941:        }
+        -:  942:
+function _ZNK9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11StackStreamIcE6LengthEv called 12824 returned 100% blocks executed 100%
+    12824:  943:        size_t Length() const { return length_; }
+    12824:  943-block  0
+        -:  944:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11StackStreamIcE3PopEv called 12824 returned 100% blocks executed 100%
+    12824:  945:        Ch* Pop() {
+    12824:  946:            return stack_.template Pop<Ch>(length_);
+    12824:  946-block  0
+call    0 returned 12824
+        -:  947:        }
+        -:  948:
+        -:  949:    private:
+        -:  950:        StackStream(const StackStream&);
+        -:  951:        StackStream& operator=(const StackStream&);
+        -:  952:
+        -:  953:        internal::Stack<StackAllocator>& stack_;
+        -:  954:        SizeType length_;
+        -:  955:    };
+        -:  956:
+        -:  957:    // Parse string and generate String event. Different code paths for kParseInsituFlag.
+        -:  958:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11ParseStringILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_b called 12824 returned 100% blocks executed 62%
+    12824:  959:    void ParseString(InputStream& is, Handler& handler, bool isKey = false) {
+    12824:  960:        internal::StreamLocalCopy<InputStream> copy(is);
+    12824:  960-block  0
+call    0 returned 12824
+    $$$$$:  960-block  1
+call    1 never executed
+    12824:  961:        InputStream& s(copy.s);
+        -:  962:
+   12824*:  963:        RAPIDJSON_ASSERT(s.Peek() == '\"');
+call    0 returned 12824
+branch  1 taken 0 (fallthrough)
+branch  2 taken 12824
+    %%%%%:  963-block  0
+call    3 never executed
+    12824:  964:        s.Take();  // Skip '\"'
+    12824:  964-block  0
+call    0 returned 12824
+        -:  965:
+    12824:  966:        bool success = false;
+        -:  967:        if (parseFlags & kParseInsituFlag) {
+        -:  968:            typename InputStream::Ch *head = s.PutBegin();
+        -:  969:            ParseStringToStream<parseFlags, SourceEncoding, SourceEncoding>(s, s);
+        -:  970:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+        -:  971:            size_t length = s.PutEnd(head) - 1;
+        -:  972:            RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
+        -:  973:            const typename TargetEncoding::Ch* const str = reinterpret_cast<typename TargetEncoding::Ch*>(head);
+        -:  974:            success = (isKey ? handler.Key(str, SizeType(length), false) : handler.String(str, SizeType(length), false));
+        -:  975:        }
+        -:  976:        else {
+    12824:  977:            StackStream<typename TargetEncoding::Ch> stackStream(stack_);
+    12824:  977-block  0
+call    0 returned 12824
+    12824:  978:            ParseStringToStream<parseFlags, SourceEncoding, TargetEncoding>(s, stackStream);
+call    0 returned 12824
+branch  1 taken 12824 (fallthrough)
+branch  2 taken 0 (throw)
+   12824*:  979:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+    12824:  979-block  0
+call    0 returned 12824
+branch  1 taken 0 (fallthrough)
+branch  2 taken 12824
+    %%%%%:  979-block  1
+    12824:  980:            SizeType length = static_cast<SizeType>(stackStream.Length()) - 1;
+    12824:  980-block  0
+call    0 returned 12824
+    12824:  981:            const typename TargetEncoding::Ch* const str = stackStream.Pop();
+call    0 returned 12824
+branch  1 taken 12824 (fallthrough)
+branch  2 taken 0 (throw)
+    12824:  982:            success = (isKey ? handler.Key(str, length, true) : handler.String(str, length, true));
+    12824:  982-block  0
+branch  0 taken 7637 (fallthrough)
+branch  1 taken 5187
+     7637:  982-block  1
+call    2 returned 7637
+branch  3 taken 7637 (fallthrough)
+branch  4 taken 0 (throw)
+     7637:  982-block  2
+     5187:  982-block  3
+call    5 returned 5187
+branch  6 taken 5187 (fallthrough)
+branch  7 taken 0 (throw)
+     5187:  982-block  4
+        -:  983:        }
+    12824:  984:        if (RAPIDJSON_UNLIKELY(!success))
+    12824:  984-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 12824
+    #####:  985:            RAPIDJSON_PARSE_ERROR(kParseErrorTermination, s.Tell());
+    %%%%%:  985-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  985-block  1
+call    3 never executed
+    %%%%%:  985-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  985-block  3
+        -:  986:    }
+        -:  987:
+        -:  988:    // Parse string to an output is
+        -:  989:    // This function handles the prefix/suffix double quotes, escaping, and optional encoding validation.
+        -:  990:    template<unsigned parseFlags, typename SEncoding, typename TEncoding, typename InputStream, typename OutputStream>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE19ParseStringToStreamILj0ES2_S2_NS_19GenericStringStreamIS2_EENS4_11StackStreamIcEEEEvRT2_RT3_ called 12824 returned 100% blocks executed 26%
+   239980:  991:    RAPIDJSON_FORCEINLINE void ParseStringToStream(InputStream& is, OutputStream& os) {
+        -:  992://!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+        -:  993:#define Z16 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        -:  994:        static const char escape[256] = {
+        -:  995:            Z16, Z16, 0, 0,'\"', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '/',
+        -:  996:            Z16, Z16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,'\\', 0, 0, 0,
+        -:  997:            0, 0,'\b', 0, 0, 0,'\f', 0, 0, 0, 0, 0, 0, 0,'\n', 0,
+        -:  998:            0, 0,'\r', 0,'\t', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        -:  999:            Z16, Z16, Z16, Z16, Z16, Z16, Z16, Z16
+        -: 1000:        };
+        -: 1001:#undef Z16
+        -: 1002://!@endcond
+        -: 1003:
+   227156: 1004:        for (;;) {
+   227156: 1004-block  0
+        -: 1005:            // Scan and copy string before "\\\"" or < 0x20. This is an optional optimzation.
+        -: 1006:            if (!(parseFlags & kParseValidateEncodingFlag))
+   239980: 1007:                ScanCopyUnescapedString(is, os);
+   239980: 1007-block  0
+call    0 returned 239980
+        -: 1008:
+   239980: 1009:            Ch c = is.Peek();
+call    0 returned 239980
+   239980: 1010:            if (RAPIDJSON_UNLIKELY(c == '\\')) {    // Escape
+branch  0 taken 114 (fallthrough)
+branch  1 taken 239866
+      114: 1011:                size_t escapeOffset = is.Tell();    // For invalid escaping, report the initial '\\' as error offset
+      114: 1011-block  0
+call    0 returned 114
+      114: 1012:                is.Take();
+call    0 returned 114
+      114: 1013:                Ch e = is.Peek();
+call    0 returned 114
+      114: 1014:                if ((sizeof(Ch) == 1 || unsigned(e) < 256) && RAPIDJSON_LIKELY(escape[static_cast<unsigned char>(e)])) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 114
+    #####: 1015:                    is.Take();
+    %%%%%: 1015-block  0
+call    0 never executed
+    #####: 1016:                    os.Put(static_cast<typename TEncoding::Ch>(escape[static_cast<unsigned char>(e)]));
+call    0 never executed
+        -: 1017:                }
+        -: 1018:                else if ((parseFlags & kParseEscapedApostropheFlag) && RAPIDJSON_LIKELY(e == '\'')) { // Allow escaped apostrophe
+        -: 1019:                    is.Take();
+        -: 1020:                    os.Put('\'');
+        -: 1021:                }
+      114: 1022:                else if (RAPIDJSON_LIKELY(e == 'u')) {    // Unicode
+      114: 1022-block  0
+branch  0 taken 114 (fallthrough)
+branch  1 taken 0
+      114: 1023:                    is.Take();
+      114: 1023-block  0
+call    0 returned 114
+      114: 1024:                    unsigned codepoint = ParseHex4(is, escapeOffset);
+call    0 returned 114
+     114*: 1025:                    RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 returned 114
+branch  1 taken 0 (fallthrough)
+branch  2 taken 114
+    %%%%%: 1025-block  0
+     114*: 1026:                    if (RAPIDJSON_UNLIKELY(codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+      114: 1026-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 114
+    %%%%%: 1026-block  1
+branch  2 never executed
+branch  3 never executed
+    %%%%%: 1026-block  2
+      114: 1026-block  3
+      114: 1026-block  4
+branch  4 taken 0 (fallthrough)
+branch  5 taken 114
+        -: 1027:                        // high surrogate, check if followed by valid low surrogate
+    #####: 1028:                        if (RAPIDJSON_LIKELY(codepoint <= 0xDBFF)) {
+    %%%%%: 1028-block  0
+branch  0 never executed
+branch  1 never executed
+        -: 1029:                            // Handle UTF-16 surrogate pair
+    #####: 1030:                            if (RAPIDJSON_UNLIKELY(!Consume(is, '\\') || !Consume(is, 'u')))
+    %%%%%: 1030-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1030-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1030-block  2
+    %%%%%: 1030-block  3
+    %%%%%: 1030-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1031:                                RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
+    %%%%%: 1031-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1031-block  1
+call    3 never executed
+    %%%%%: 1031-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1031-block  3
+    #####: 1032:                            unsigned codepoint2 = ParseHex4(is, escapeOffset);
+    %%%%%: 1032-block  0
+call    0 never executed
+    #####: 1033:                            RAPIDJSON_PARSE_ERROR_EARLY_RETURN_VOID;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1033-block  0
+    #####: 1034:                            if (RAPIDJSON_UNLIKELY(codepoint2 < 0xDC00 || codepoint2 > 0xDFFF))
+    %%%%%: 1034-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1034-block  1
+branch  2 never executed
+branch  3 never executed
+    %%%%%: 1034-block  2
+    %%%%%: 1034-block  3
+    %%%%%: 1034-block  4
+branch  4 never executed
+branch  5 never executed
+    #####: 1035:                                RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
+    %%%%%: 1035-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1035-block  1
+call    3 never executed
+    %%%%%: 1035-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1035-block  3
+    #####: 1036:                            codepoint = (((codepoint - 0xD800) << 10) | (codepoint2 - 0xDC00)) + 0x10000;
+    %%%%%: 1036-block  0
+        -: 1037:                        }
+        -: 1038:                        // single low surrogate
+        -: 1039:                        else
+        -: 1040:                        {
+    #####: 1041:                            RAPIDJSON_PARSE_ERROR(kParseErrorStringUnicodeSurrogateInvalid, escapeOffset);
+    %%%%%: 1041-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1041-block  1
+call    3 never executed
+    %%%%%: 1041-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1041-block  3
+        -: 1042:                        }
+        -: 1043:                    }
+      114: 1044:                    TEncoding::Encode(os, codepoint);
+      114: 1044-block  0
+call    0 returned 114
+        -: 1045:                }
+        -: 1046:                else
+    #####: 1047:                    RAPIDJSON_PARSE_ERROR(kParseErrorStringEscapeInvalid, escapeOffset);
+    %%%%%: 1047-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1047-block  1
+call    3 never executed
+    %%%%%: 1047-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1047-block  3
+        -: 1048:            }
+   239866: 1049:            else if (RAPIDJSON_UNLIKELY(c == '"')) {    // Closing double quote
+   239866: 1049-block  0
+branch  0 taken 12824 (fallthrough)
+branch  1 taken 227042
+    12824: 1050:                is.Take();
+    12824: 1050-block  0
+call    0 returned 12824
+    12824: 1051:                os.Put('\0');   // null-terminate the string
+call    0 returned 12824
+    12824: 1052:                return;
+        -: 1053:            }
+   227042: 1054:            else if (RAPIDJSON_UNLIKELY(static_cast<unsigned>(c) < 0x20)) { // RFC 4627: unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
+   227042: 1054-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 227042
+    #####: 1055:                if (c == '\0')
+    %%%%%: 1055-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1056:                    RAPIDJSON_PARSE_ERROR(kParseErrorStringMissQuotationMark, is.Tell());
+    %%%%%: 1056-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1056-block  1
+call    3 never executed
+    %%%%%: 1056-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%: 1056-block  3
+        -: 1057:                else
+    #####: 1058:                    RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, is.Tell());
+    %%%%%: 1058-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1058-block  1
+call    3 never executed
+    %%%%%: 1058-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%: 1058-block  3
+        -: 1059:            }
+        -: 1060:            else {
+   227042: 1061:                size_t offset = is.Tell();
+   227042: 1061-block  0
+call    0 returned 227042
+   227042: 1062:                if (RAPIDJSON_UNLIKELY((parseFlags & kParseValidateEncodingFlag ?
+call    0 returned 227042
+branch  1 taken 0 (fallthrough)
+branch  2 taken 227042
+        -: 1063:                    !Transcoder<SEncoding, TEncoding>::Validate(is, os) :
+        -: 1064:                    !Transcoder<SEncoding, TEncoding>::Transcode(is, os))))
+    #####: 1065:                    RAPIDJSON_PARSE_ERROR(kParseErrorStringInvalidEncoding, offset);
+    %%%%%: 1065-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1065-block  1
+call    3 never executed
+    %%%%%: 1065-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1065-block  3
+        -: 1066:            }
+        -: 1067:        }
+        -: 1068:    }
+        -: 1069:
+        -: 1070:    template<typename InputStream, typename OutputStream>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE23ScanCopyUnescapedStringINS_19GenericStringStreamIS2_EENS4_11StackStreamIcEEEEvRT_RT0_ called 239980 returned 100% blocks executed 100%
+   239980: 1071:    static RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InputStream&, OutputStream&) {
+        -: 1072:            // Do nothing for generic version
+   239980: 1073:    }
+        -: 1074:
+        -: 1075:#if defined(RAPIDJSON_SSE2) || defined(RAPIDJSON_SSE42)
+        -: 1076:    // StringStream -> StackStream<char>
+        -: 1077:    static RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(StringStream& is, StackStream<char>& os) {
+        -: 1078:        const char* p = is.src_;
+        -: 1079:
+        -: 1080:        // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
+        -: 1081:        const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -: 1082:        while (p != nextAligned)
+        -: 1083:            if (RAPIDJSON_UNLIKELY(*p == '\"') || RAPIDJSON_UNLIKELY(*p == '\\') || RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+        -: 1084:                is.src_ = p;
+        -: 1085:                return;
+        -: 1086:            }
+        -: 1087:            else
+        -: 1088:                os.Put(*p++);
+        -: 1089:
+        -: 1090:        // The rest of string using SIMD
+        -: 1091:        static const char dquote[16] = { '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"' };
+        -: 1092:        static const char bslash[16] = { '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\' };
+        -: 1093:        static const char space[16]  = { 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F };
+        -: 1094:        const __m128i dq = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&dquote[0]));
+        -: 1095:        const __m128i bs = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&bslash[0]));
+        -: 1096:        const __m128i sp = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&space[0]));
+        -: 1097:
+        -: 1098:        for (;; p += 16) {
+        -: 1099:            const __m128i s = _mm_load_si128(reinterpret_cast<const __m128i *>(p));
+        -: 1100:            const __m128i t1 = _mm_cmpeq_epi8(s, dq);
+        -: 1101:            const __m128i t2 = _mm_cmpeq_epi8(s, bs);
+        -: 1102:            const __m128i t3 = _mm_cmpeq_epi8(_mm_max_epu8(s, sp), sp); // s < 0x20 <=> max(s, 0x1F) == 0x1F
+        -: 1103:            const __m128i x = _mm_or_si128(_mm_or_si128(t1, t2), t3);
+        -: 1104:            unsigned short r = static_cast<unsigned short>(_mm_movemask_epi8(x));
+        -: 1105:            if (RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
+        -: 1106:                SizeType length;
+        -: 1107:    #ifdef _MSC_VER         // Find the index of first escaped
+        -: 1108:                unsigned long offset;
+        -: 1109:                _BitScanForward(&offset, r);
+        -: 1110:                length = offset;
+        -: 1111:    #else
+        -: 1112:                length = static_cast<SizeType>(__builtin_ffs(r) - 1);
+        -: 1113:    #endif
+        -: 1114:                if (length != 0) {
+        -: 1115:                    char* q = reinterpret_cast<char*>(os.Push(length));
+        -: 1116:                    for (size_t i = 0; i < length; i++)
+        -: 1117:                        q[i] = p[i];
+        -: 1118:
+        -: 1119:                    p += length;
+        -: 1120:                }
+        -: 1121:                break;
+        -: 1122:            }
+        -: 1123:            _mm_storeu_si128(reinterpret_cast<__m128i *>(os.Push(16)), s);
+        -: 1124:        }
+        -: 1125:
+        -: 1126:        is.src_ = p;
+        -: 1127:    }
+        -: 1128:
+        -: 1129:    // InsituStringStream -> InsituStringStream
+        -: 1130:    static RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InsituStringStream& is, InsituStringStream& os) {
+        -: 1131:        RAPIDJSON_ASSERT(&is == &os);
+        -: 1132:        (void)os;
+        -: 1133:
+        -: 1134:        if (is.src_ == is.dst_) {
+        -: 1135:            SkipUnescapedString(is);
+        -: 1136:            return;
+        -: 1137:        }
+        -: 1138:
+        -: 1139:        char* p = is.src_;
+        -: 1140:        char *q = is.dst_;
+        -: 1141:
+        -: 1142:        // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
+        -: 1143:        const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -: 1144:        while (p != nextAligned)
+        -: 1145:            if (RAPIDJSON_UNLIKELY(*p == '\"') || RAPIDJSON_UNLIKELY(*p == '\\') || RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+        -: 1146:                is.src_ = p;
+        -: 1147:                is.dst_ = q;
+        -: 1148:                return;
+        -: 1149:            }
+        -: 1150:            else
+        -: 1151:                *q++ = *p++;
+        -: 1152:
+        -: 1153:        // The rest of string using SIMD
+        -: 1154:        static const char dquote[16] = { '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"' };
+        -: 1155:        static const char bslash[16] = { '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\' };
+        -: 1156:        static const char space[16] = { 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F };
+        -: 1157:        const __m128i dq = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&dquote[0]));
+        -: 1158:        const __m128i bs = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&bslash[0]));
+        -: 1159:        const __m128i sp = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&space[0]));
+        -: 1160:
+        -: 1161:        for (;; p += 16, q += 16) {
+        -: 1162:            const __m128i s = _mm_load_si128(reinterpret_cast<const __m128i *>(p));
+        -: 1163:            const __m128i t1 = _mm_cmpeq_epi8(s, dq);
+        -: 1164:            const __m128i t2 = _mm_cmpeq_epi8(s, bs);
+        -: 1165:            const __m128i t3 = _mm_cmpeq_epi8(_mm_max_epu8(s, sp), sp); // s < 0x20 <=> max(s, 0x1F) == 0x1F
+        -: 1166:            const __m128i x = _mm_or_si128(_mm_or_si128(t1, t2), t3);
+        -: 1167:            unsigned short r = static_cast<unsigned short>(_mm_movemask_epi8(x));
+        -: 1168:            if (RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
+        -: 1169:                size_t length;
+        -: 1170:#ifdef _MSC_VER         // Find the index of first escaped
+        -: 1171:                unsigned long offset;
+        -: 1172:                _BitScanForward(&offset, r);
+        -: 1173:                length = offset;
+        -: 1174:#else
+        -: 1175:                length = static_cast<size_t>(__builtin_ffs(r) - 1);
+        -: 1176:#endif
+        -: 1177:                for (const char* pend = p + length; p != pend; )
+        -: 1178:                    *q++ = *p++;
+        -: 1179:                break;
+        -: 1180:            }
+        -: 1181:            _mm_storeu_si128(reinterpret_cast<__m128i *>(q), s);
+        -: 1182:        }
+        -: 1183:
+        -: 1184:        is.src_ = p;
+        -: 1185:        is.dst_ = q;
+        -: 1186:    }
+        -: 1187:
+        -: 1188:    // When read/write pointers are the same for insitu stream, just skip unescaped characters
+        -: 1189:    static RAPIDJSON_FORCEINLINE void SkipUnescapedString(InsituStringStream& is) {
+        -: 1190:        RAPIDJSON_ASSERT(is.src_ == is.dst_);
+        -: 1191:        char* p = is.src_;
+        -: 1192:
+        -: 1193:        // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
+        -: 1194:        const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -: 1195:        for (; p != nextAligned; p++)
+        -: 1196:            if (RAPIDJSON_UNLIKELY(*p == '\"') || RAPIDJSON_UNLIKELY(*p == '\\') || RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+        -: 1197:                is.src_ = is.dst_ = p;
+        -: 1198:                return;
+        -: 1199:            }
+        -: 1200:
+        -: 1201:        // The rest of string using SIMD
+        -: 1202:        static const char dquote[16] = { '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"', '\"' };
+        -: 1203:        static const char bslash[16] = { '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\', '\\' };
+        -: 1204:        static const char space[16] = { 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F };
+        -: 1205:        const __m128i dq = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&dquote[0]));
+        -: 1206:        const __m128i bs = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&bslash[0]));
+        -: 1207:        const __m128i sp = _mm_loadu_si128(reinterpret_cast<const __m128i *>(&space[0]));
+        -: 1208:
+        -: 1209:        for (;; p += 16) {
+        -: 1210:            const __m128i s = _mm_load_si128(reinterpret_cast<const __m128i *>(p));
+        -: 1211:            const __m128i t1 = _mm_cmpeq_epi8(s, dq);
+        -: 1212:            const __m128i t2 = _mm_cmpeq_epi8(s, bs);
+        -: 1213:            const __m128i t3 = _mm_cmpeq_epi8(_mm_max_epu8(s, sp), sp); // s < 0x20 <=> max(s, 0x1F) == 0x1F
+        -: 1214:            const __m128i x = _mm_or_si128(_mm_or_si128(t1, t2), t3);
+        -: 1215:            unsigned short r = static_cast<unsigned short>(_mm_movemask_epi8(x));
+        -: 1216:            if (RAPIDJSON_UNLIKELY(r != 0)) {   // some of characters is escaped
+        -: 1217:                size_t length;
+        -: 1218:#ifdef _MSC_VER         // Find the index of first escaped
+        -: 1219:                unsigned long offset;
+        -: 1220:                _BitScanForward(&offset, r);
+        -: 1221:                length = offset;
+        -: 1222:#else
+        -: 1223:                length = static_cast<size_t>(__builtin_ffs(r) - 1);
+        -: 1224:#endif
+        -: 1225:                p += length;
+        -: 1226:                break;
+        -: 1227:            }
+        -: 1228:        }
+        -: 1229:
+        -: 1230:        is.src_ = is.dst_ = p;
+        -: 1231:    }
+        -: 1232:#elif defined(RAPIDJSON_NEON)
+        -: 1233:    // StringStream -> StackStream<char>
+        -: 1234:    static RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(StringStream& is, StackStream<char>& os) {
+        -: 1235:        const char* p = is.src_;
+        -: 1236:
+        -: 1237:        // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
+        -: 1238:        const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -: 1239:        while (p != nextAligned)
+        -: 1240:            if (RAPIDJSON_UNLIKELY(*p == '\"') || RAPIDJSON_UNLIKELY(*p == '\\') || RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+        -: 1241:                is.src_ = p;
+        -: 1242:                return;
+        -: 1243:            }
+        -: 1244:            else
+        -: 1245:                os.Put(*p++);
+        -: 1246:
+        -: 1247:        // The rest of string using SIMD
+        -: 1248:        const uint8x16_t s0 = vmovq_n_u8('"');
+        -: 1249:        const uint8x16_t s1 = vmovq_n_u8('\\');
+        -: 1250:        const uint8x16_t s2 = vmovq_n_u8('\b');
+        -: 1251:        const uint8x16_t s3 = vmovq_n_u8(32);
+        -: 1252:
+        -: 1253:        for (;; p += 16) {
+        -: 1254:            const uint8x16_t s = vld1q_u8(reinterpret_cast<const uint8_t *>(p));
+        -: 1255:            uint8x16_t x = vceqq_u8(s, s0);
+        -: 1256:            x = vorrq_u8(x, vceqq_u8(s, s1));
+        -: 1257:            x = vorrq_u8(x, vceqq_u8(s, s2));
+        -: 1258:            x = vorrq_u8(x, vcltq_u8(s, s3));
+        -: 1259:
+        -: 1260:            x = vrev64q_u8(x);                     // Rev in 64
+        -: 1261:            uint64_t low = vgetq_lane_u64(vreinterpretq_u64_u8(x), 0);   // extract
+        -: 1262:            uint64_t high = vgetq_lane_u64(vreinterpretq_u64_u8(x), 1);  // extract
+        -: 1263:
+        -: 1264:            SizeType length = 0;
+        -: 1265:            bool escaped = false;
+        -: 1266:            if (low == 0) {
+        -: 1267:                if (high != 0) {
+        -: 1268:                    uint32_t lz = internal::clzll(high);
+        -: 1269:                    length = 8 + (lz >> 3);
+        -: 1270:                    escaped = true;
+        -: 1271:                }
+        -: 1272:            } else {
+        -: 1273:                uint32_t lz = internal::clzll(low);
+        -: 1274:                length = lz >> 3;
+        -: 1275:                escaped = true;
+        -: 1276:            }
+        -: 1277:            if (RAPIDJSON_UNLIKELY(escaped)) {   // some of characters is escaped
+        -: 1278:                if (length != 0) {
+        -: 1279:                    char* q = reinterpret_cast<char*>(os.Push(length));
+        -: 1280:                    for (size_t i = 0; i < length; i++)
+        -: 1281:                        q[i] = p[i];
+        -: 1282:
+        -: 1283:                    p += length;
+        -: 1284:                }
+        -: 1285:                break;
+        -: 1286:            }
+        -: 1287:            vst1q_u8(reinterpret_cast<uint8_t *>(os.Push(16)), s);
+        -: 1288:        }
+        -: 1289:
+        -: 1290:        is.src_ = p;
+        -: 1291:    }
+        -: 1292:
+        -: 1293:    // InsituStringStream -> InsituStringStream
+        -: 1294:    static RAPIDJSON_FORCEINLINE void ScanCopyUnescapedString(InsituStringStream& is, InsituStringStream& os) {
+        -: 1295:        RAPIDJSON_ASSERT(&is == &os);
+        -: 1296:        (void)os;
+        -: 1297:
+        -: 1298:        if (is.src_ == is.dst_) {
+        -: 1299:            SkipUnescapedString(is);
+        -: 1300:            return;
+        -: 1301:        }
+        -: 1302:
+        -: 1303:        char* p = is.src_;
+        -: 1304:        char *q = is.dst_;
+        -: 1305:
+        -: 1306:        // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
+        -: 1307:        const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -: 1308:        while (p != nextAligned)
+        -: 1309:            if (RAPIDJSON_UNLIKELY(*p == '\"') || RAPIDJSON_UNLIKELY(*p == '\\') || RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+        -: 1310:                is.src_ = p;
+        -: 1311:                is.dst_ = q;
+        -: 1312:                return;
+        -: 1313:            }
+        -: 1314:            else
+        -: 1315:                *q++ = *p++;
+        -: 1316:
+        -: 1317:        // The rest of string using SIMD
+        -: 1318:        const uint8x16_t s0 = vmovq_n_u8('"');
+        -: 1319:        const uint8x16_t s1 = vmovq_n_u8('\\');
+        -: 1320:        const uint8x16_t s2 = vmovq_n_u8('\b');
+        -: 1321:        const uint8x16_t s3 = vmovq_n_u8(32);
+        -: 1322:
+        -: 1323:        for (;; p += 16, q += 16) {
+        -: 1324:            const uint8x16_t s = vld1q_u8(reinterpret_cast<uint8_t *>(p));
+        -: 1325:            uint8x16_t x = vceqq_u8(s, s0);
+        -: 1326:            x = vorrq_u8(x, vceqq_u8(s, s1));
+        -: 1327:            x = vorrq_u8(x, vceqq_u8(s, s2));
+        -: 1328:            x = vorrq_u8(x, vcltq_u8(s, s3));
+        -: 1329:
+        -: 1330:            x = vrev64q_u8(x);                     // Rev in 64
+        -: 1331:            uint64_t low = vgetq_lane_u64(vreinterpretq_u64_u8(x), 0);   // extract
+        -: 1332:            uint64_t high = vgetq_lane_u64(vreinterpretq_u64_u8(x), 1);  // extract
+        -: 1333:
+        -: 1334:            SizeType length = 0;
+        -: 1335:            bool escaped = false;
+        -: 1336:            if (low == 0) {
+        -: 1337:                if (high != 0) {
+        -: 1338:                    uint32_t lz = internal::clzll(high);
+        -: 1339:                    length = 8 + (lz >> 3);
+        -: 1340:                    escaped = true;
+        -: 1341:                }
+        -: 1342:            } else {
+        -: 1343:                uint32_t lz = internal::clzll(low);
+        -: 1344:                length = lz >> 3;
+        -: 1345:                escaped = true;
+        -: 1346:            }
+        -: 1347:            if (RAPIDJSON_UNLIKELY(escaped)) {   // some of characters is escaped
+        -: 1348:                for (const char* pend = p + length; p != pend; ) {
+        -: 1349:                    *q++ = *p++;
+        -: 1350:                }
+        -: 1351:                break;
+        -: 1352:            }
+        -: 1353:            vst1q_u8(reinterpret_cast<uint8_t *>(q), s);
+        -: 1354:        }
+        -: 1355:
+        -: 1356:        is.src_ = p;
+        -: 1357:        is.dst_ = q;
+        -: 1358:    }
+        -: 1359:
+        -: 1360:    // When read/write pointers are the same for insitu stream, just skip unescaped characters
+        -: 1361:    static RAPIDJSON_FORCEINLINE void SkipUnescapedString(InsituStringStream& is) {
+        -: 1362:        RAPIDJSON_ASSERT(is.src_ == is.dst_);
+        -: 1363:        char* p = is.src_;
+        -: 1364:
+        -: 1365:        // Scan one by one until alignment (unaligned load may cross page boundary and cause crash)
+        -: 1366:        const char* nextAligned = reinterpret_cast<const char*>((reinterpret_cast<size_t>(p) + 15) & static_cast<size_t>(~15));
+        -: 1367:        for (; p != nextAligned; p++)
+        -: 1368:            if (RAPIDJSON_UNLIKELY(*p == '\"') || RAPIDJSON_UNLIKELY(*p == '\\') || RAPIDJSON_UNLIKELY(static_cast<unsigned>(*p) < 0x20)) {
+        -: 1369:                is.src_ = is.dst_ = p;
+        -: 1370:                return;
+        -: 1371:            }
+        -: 1372:
+        -: 1373:        // The rest of string using SIMD
+        -: 1374:        const uint8x16_t s0 = vmovq_n_u8('"');
+        -: 1375:        const uint8x16_t s1 = vmovq_n_u8('\\');
+        -: 1376:        const uint8x16_t s2 = vmovq_n_u8('\b');
+        -: 1377:        const uint8x16_t s3 = vmovq_n_u8(32);
+        -: 1378:
+        -: 1379:        for (;; p += 16) {
+        -: 1380:            const uint8x16_t s = vld1q_u8(reinterpret_cast<uint8_t *>(p));
+        -: 1381:            uint8x16_t x = vceqq_u8(s, s0);
+        -: 1382:            x = vorrq_u8(x, vceqq_u8(s, s1));
+        -: 1383:            x = vorrq_u8(x, vceqq_u8(s, s2));
+        -: 1384:            x = vorrq_u8(x, vcltq_u8(s, s3));
+        -: 1385:
+        -: 1386:            x = vrev64q_u8(x);                     // Rev in 64
+        -: 1387:            uint64_t low = vgetq_lane_u64(vreinterpretq_u64_u8(x), 0);   // extract
+        -: 1388:            uint64_t high = vgetq_lane_u64(vreinterpretq_u64_u8(x), 1);  // extract
+        -: 1389:
+        -: 1390:            if (low == 0) {
+        -: 1391:                if (high != 0) {
+        -: 1392:                    uint32_t lz = internal::clzll(high);
+        -: 1393:                    p += 8 + (lz >> 3);
+        -: 1394:                    break;
+        -: 1395:                }
+        -: 1396:            } else {
+        -: 1397:                uint32_t lz = internal::clzll(low);
+        -: 1398:                p += lz >> 3;
+        -: 1399:                break;
+        -: 1400:            }
+        -: 1401:        }
+        -: 1402:
+        -: 1403:        is.src_ = is.dst_ = p;
+        -: 1404:    }
+        -: 1405:#endif // RAPIDJSON_NEON
+        -: 1406:
+        -: 1407:    template<typename InputStream, bool backup, bool pushOnTake>
+        -: 1408:    class NumberStream;
+        -: 1409:
+        -: 1410:    template<typename InputStream>
+        -: 1411:    class NumberStream<InputStream, false, false> {
+        -: 1412:    public:
+        -: 1413:        typedef typename InputStream::Ch Ch;
+        -: 1414:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EEC2ERS4_RS7_ called 847 returned 100% blocks executed 100%
+      847: 1415:        NumberStream(GenericReader& reader, InputStream& s) : is(s) { (void)reader;  }
+        -: 1416:
+function _ZNK9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EE4PeekEv called 10980 returned 100% blocks executed 100%
+    10980: 1417:        RAPIDJSON_FORCEINLINE Ch Peek() const { return is.Peek(); }
+    10980: 1417-block  0
+call    0 returned 10980
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EE8TakePushEv called 2949 returned 100% blocks executed 100%
+     2949: 1418:        RAPIDJSON_FORCEINLINE Ch TakePush() { return is.Take(); }
+     2949: 1418-block  0
+call    0 returned 2949
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EE4TakeEv called 0 returned 0% blocks executed 0%
+    #####: 1419:        RAPIDJSON_FORCEINLINE Ch Take() { return is.Take(); }
+    %%%%%: 1419-block  0
+call    0 never executed
+        -: 1420:        RAPIDJSON_FORCEINLINE void Push(char) {}
+        -: 1421:
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EE4TellEv called 847 returned 100% blocks executed 100%
+      847: 1422:        size_t Tell() { return is.Tell(); }
+      847: 1422-block  0
+call    0 returned 847
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EE6LengthEv called 1694 returned 100% blocks executed 100%
+     1694: 1423:        size_t Length() { return 0; }
+     1694: 1423-block  0
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE12NumberStreamINS_19GenericStringStreamIS2_EELb0ELb0EE3PopEv called 847 returned 100% blocks executed 100%
+      847: 1424:        const char* Pop() { return 0; }
+      847: 1424-block  0
+        -: 1425:
+        -: 1426:    protected:
+        -: 1427:        NumberStream& operator=(const NumberStream&);
+        -: 1428:
+        -: 1429:        InputStream& is;
+        -: 1430:    };
+        -: 1431:
+        -: 1432:    template<typename InputStream>
+        -: 1433:    class NumberStream<InputStream, true, false> : public NumberStream<InputStream, false, false> {
+        -: 1434:        typedef NumberStream<InputStream, false, false> Base;
+        -: 1435:    public:
+        -: 1436:        NumberStream(GenericReader& reader, InputStream& is) : Base(reader, is), stackStream(reader.stack_) {}
+        -: 1437:
+        -: 1438:        RAPIDJSON_FORCEINLINE Ch TakePush() {
+        -: 1439:            stackStream.Put(static_cast<char>(Base::is.Peek()));
+        -: 1440:            return Base::is.Take();
+        -: 1441:        }
+        -: 1442:
+        -: 1443:        RAPIDJSON_FORCEINLINE void Push(char c) {
+        -: 1444:            stackStream.Put(c);
+        -: 1445:        }
+        -: 1446:
+        -: 1447:        size_t Length() { return stackStream.Length(); }
+        -: 1448:
+        -: 1449:        const char* Pop() {
+        -: 1450:            stackStream.Put('\0');
+        -: 1451:            return stackStream.Pop();
+        -: 1452:        }
+        -: 1453:
+        -: 1454:    private:
+        -: 1455:        StackStream<char> stackStream;
+        -: 1456:    };
+        -: 1457:
+        -: 1458:    template<typename InputStream>
+        -: 1459:    class NumberStream<InputStream, true, true> : public NumberStream<InputStream, true, false> {
+        -: 1460:        typedef NumberStream<InputStream, true, false> Base;
+        -: 1461:    public:
+        -: 1462:        NumberStream(GenericReader& reader, InputStream& is) : Base(reader, is) {}
+        -: 1463:
+        -: 1464:        RAPIDJSON_FORCEINLINE Ch Take() { return Base::TakePush(); }
+        -: 1465:    };
+        -: 1466:
+        -: 1467:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE11ParseNumberILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 847 returned 100% blocks executed 18%
+      847: 1468:    void ParseNumber(InputStream& is, Handler& handler) {
+      847: 1469:        internal::StreamLocalCopy<InputStream> copy(is);
+      847: 1469-block  0
+call    0 returned 847
+    $$$$$: 1469-block  1
+call    1 never executed
+        -: 1470:        NumberStream<InputStream,
+        -: 1471:            ((parseFlags & kParseNumbersAsStringsFlag) != 0) ?
+        -: 1472:                ((parseFlags & kParseInsituFlag) == 0) :
+        -: 1473:                ((parseFlags & kParseFullPrecisionFlag) != 0),
+        -: 1474:            (parseFlags & kParseNumbersAsStringsFlag) != 0 &&
+      847: 1475:                (parseFlags & kParseInsituFlag) == 0> s(*this, copy.s);
+call    0 returned 847
+        -: 1476:
+      847: 1477:        size_t startOffset = s.Tell();
+call    0 returned 847
+      847: 1478:        double d = 0.0;
+      847: 1479:        bool useNanOrInf = false;
+        -: 1480:
+        -: 1481:        // Parse minus
+      847: 1482:        bool minus = Consume(s, '-');
+call    0 returned 847
+branch  1 taken 847 (fallthrough)
+branch  2 taken 0 (throw)
+        -: 1483:
+        -: 1484:        // Parse int: zero / ( digit1-9 *DIGIT )
+      847: 1485:        unsigned i = 0;
+      847: 1486:        uint64_t i64 = 0;
+      847: 1487:        bool use64bit = false;
+      847: 1488:        int significandDigit = 0;
+      847: 1489:        if (RAPIDJSON_UNLIKELY(s.Peek() == '0')) {
+      847: 1489-block  0
+call    0 returned 847
+branch  1 taken 0 (fallthrough)
+branch  2 taken 847
+    #####: 1490:            i = 0;
+    #####: 1491:            s.TakePush();
+    %%%%%: 1491-block  0
+call    0 never executed
+        -: 1492:        }
+     847*: 1493:        else if (RAPIDJSON_LIKELY(s.Peek() >= '1' && s.Peek() <= '9')) {
+      847: 1493-block  0
+call    0 returned 847
+branch  1 taken 847 (fallthrough)
+branch  2 taken 0
+      847: 1493-block  1
+call    3 returned 847
+branch  4 taken 847 (fallthrough)
+branch  5 taken 0
+      847: 1493-block  2
+    %%%%%: 1493-block  3
+      847: 1493-block  4
+branch  6 taken 847 (fallthrough)
+branch  7 taken 0
+      847: 1494:            i = static_cast<unsigned>(s.TakePush() - '0');
+      847: 1494-block  0
+call    0 returned 847
+        -: 1495:
+      847: 1496:            if (minus)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1497:                while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1497-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1497-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1497-block  2
+    %%%%%: 1497-block  3
+    %%%%%: 1497-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1498:                    if (RAPIDJSON_UNLIKELY(i >= 214748364)) { // 2^31 = 2147483648
+    %%%%%: 1498-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1499:                        if (RAPIDJSON_LIKELY(i != 214748364 || s.Peek() > '8')) {
+    %%%%%: 1499-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1499-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%: 1499-block  2
+    %%%%%: 1499-block  3
+    %%%%%: 1499-block  4
+branch  5 never executed
+branch  6 never executed
+    #####: 1500:                            i64 = i;
+    #####: 1501:                            use64bit = true;
+    #####: 1502:                            break;
+    %%%%%: 1502-block  0
+        -: 1503:                        }
+        -: 1504:                    }
+    #####: 1505:                    i = i * 10 + static_cast<unsigned>(s.TakePush() - '0');
+    %%%%%: 1505-block  0
+call    0 never executed
+    #####: 1506:                    significandDigit++;
+        -: 1507:                }
+        -: 1508:            else
+     2949: 1509:                while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+     2949: 1509-block  0
+call    0 returned 2949
+branch  1 taken 2102 (fallthrough)
+branch  2 taken 847
+     2102: 1509-block  1
+call    3 returned 2102
+branch  4 taken 2102 (fallthrough)
+branch  5 taken 0
+     2102: 1509-block  2
+      847: 1509-block  3
+     2949: 1509-block  4
+branch  6 taken 2102 (fallthrough)
+branch  7 taken 847
+     2102: 1510:                    if (RAPIDJSON_UNLIKELY(i >= 429496729)) { // 2^32 - 1 = 4294967295
+     2102: 1510-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2102
+    #####: 1511:                        if (RAPIDJSON_LIKELY(i != 429496729 || s.Peek() > '5')) {
+    %%%%%: 1511-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1511-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%: 1511-block  2
+    %%%%%: 1511-block  3
+    %%%%%: 1511-block  4
+branch  5 never executed
+branch  6 never executed
+    #####: 1512:                            i64 = i;
+    #####: 1513:                            use64bit = true;
+    #####: 1514:                            break;
+    %%%%%: 1514-block  0
+        -: 1515:                        }
+        -: 1516:                    }
+     2102: 1517:                    i = i * 10 + static_cast<unsigned>(s.TakePush() - '0');
+     2102: 1517-block  0
+call    0 returned 2102
+     2102: 1518:                    significandDigit++;
+        -: 1519:                }
+        -: 1520:        }
+        -: 1521:        // Parse NaN or Infinity here
+        -: 1522:        else if ((parseFlags & kParseNanAndInfFlag) && RAPIDJSON_LIKELY((s.Peek() == 'I' || s.Peek() == 'N'))) {
+        -: 1523:            if (Consume(s, 'N')) {
+        -: 1524:                if (Consume(s, 'a') && Consume(s, 'N')) {
+        -: 1525:                    d = std::numeric_limits<double>::quiet_NaN();
+        -: 1526:                    useNanOrInf = true;
+        -: 1527:                }
+        -: 1528:            }
+        -: 1529:            else if (RAPIDJSON_LIKELY(Consume(s, 'I'))) {
+        -: 1530:                if (Consume(s, 'n') && Consume(s, 'f')) {
+        -: 1531:                    d = (minus ? -std::numeric_limits<double>::infinity() : std::numeric_limits<double>::infinity());
+        -: 1532:                    useNanOrInf = true;
+        -: 1533:
+        -: 1534:                    if (RAPIDJSON_UNLIKELY(s.Peek() == 'i' && !(Consume(s, 'i') && Consume(s, 'n')
+        -: 1535:                                                                && Consume(s, 'i') && Consume(s, 't') && Consume(s, 'y')))) {
+        -: 1536:                        RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
+        -: 1537:                    }
+        -: 1538:                }
+        -: 1539:            }
+        -: 1540:
+        -: 1541:            if (RAPIDJSON_UNLIKELY(!useNanOrInf)) {
+        -: 1542:                RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
+        -: 1543:            }
+        -: 1544:        }
+        -: 1545:        else
+    #####: 1546:            RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, s.Tell());
+    %%%%%: 1546-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1546-block  1
+call    3 never executed
+    %%%%%: 1546-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%: 1546-block  3
+        -: 1547:
+        -: 1548:        // Parse 64bit int
+      847: 1549:        bool useDouble = false;
+      847: 1550:        if (use64bit) {
+      847: 1550-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1551:            if (minus)
+    %%%%%: 1551-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1552:                while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1552-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1552-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1552-block  2
+    %%%%%: 1552-block  3
+    %%%%%: 1552-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1553:                     if (RAPIDJSON_UNLIKELY(i64 >= RAPIDJSON_UINT64_C2(0x0CCCCCCC, 0xCCCCCCCC))) // 2^63 = 9223372036854775808
+    %%%%%: 1553-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1554:                        if (RAPIDJSON_LIKELY(i64 != RAPIDJSON_UINT64_C2(0x0CCCCCCC, 0xCCCCCCCC) || s.Peek() > '8')) {
+    %%%%%: 1554-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1554-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%: 1554-block  2
+    %%%%%: 1554-block  3
+    %%%%%: 1554-block  4
+branch  5 never executed
+branch  6 never executed
+    #####: 1555:                            d = static_cast<double>(i64);
+    #####: 1556:                            useDouble = true;
+    #####: 1557:                            break;
+    %%%%%: 1557-block  0
+        -: 1558:                        }
+    #####: 1559:                    i64 = i64 * 10 + static_cast<unsigned>(s.TakePush() - '0');
+    %%%%%: 1559-block  0
+call    0 never executed
+    #####: 1560:                    significandDigit++;
+        -: 1561:                }
+        -: 1562:            else
+    #####: 1563:                while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1563-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1563-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1563-block  2
+    %%%%%: 1563-block  3
+    %%%%%: 1563-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1564:                    if (RAPIDJSON_UNLIKELY(i64 >= RAPIDJSON_UINT64_C2(0x19999999, 0x99999999))) // 2^64 - 1 = 18446744073709551615
+    %%%%%: 1564-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1565:                        if (RAPIDJSON_LIKELY(i64 != RAPIDJSON_UINT64_C2(0x19999999, 0x99999999) || s.Peek() > '5')) {
+    %%%%%: 1565-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1565-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%: 1565-block  2
+    %%%%%: 1565-block  3
+    %%%%%: 1565-block  4
+branch  5 never executed
+branch  6 never executed
+    #####: 1566:                            d = static_cast<double>(i64);
+    #####: 1567:                            useDouble = true;
+    #####: 1568:                            break;
+    %%%%%: 1568-block  0
+        -: 1569:                        }
+    #####: 1570:                    i64 = i64 * 10 + static_cast<unsigned>(s.TakePush() - '0');
+    %%%%%: 1570-block  0
+call    0 never executed
+    #####: 1571:                    significandDigit++;
+        -: 1572:                }
+        -: 1573:        }
+        -: 1574:
+        -: 1575:        // Force double for big integer
+      847: 1576:        if (useDouble) {
+      847: 1576-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1577:            while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1577-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1577-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1577-block  2
+    %%%%%: 1577-block  3
+    %%%%%: 1577-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1578:                d = d * 10 + (s.TakePush() - '0');
+    %%%%%: 1578-block  0
+call    0 never executed
+        -: 1579:            }
+        -: 1580:        }
+        -: 1581:
+        -: 1582:        // Parse frac = decimal-point 1*DIGIT
+      847: 1583:        int expFrac = 0;
+        -: 1584:        size_t decimalPosition;
+      847: 1585:        if (Consume(s, '.')) {
+      847: 1585-block  0
+call    0 returned 847
+branch  1 taken 847 (fallthrough)
+branch  2 taken 0 (throw)
+      847: 1585-block  1
+branch  3 taken 0 (fallthrough)
+branch  4 taken 847
+    #####: 1586:            decimalPosition = s.Length();
+    %%%%%: 1586-block  0
+call    0 never executed
+        -: 1587:
+    #####: 1588:            if (RAPIDJSON_UNLIKELY(!(s.Peek() >= '0' && s.Peek() <= '9')))
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1588-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1588-block  1
+    %%%%%: 1588-block  2
+    %%%%%: 1588-block  3
+branch  6 never executed
+branch  7 never executed
+    #####: 1589:                RAPIDJSON_PARSE_ERROR(kParseErrorNumberMissFraction, s.Tell());
+    %%%%%: 1589-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1589-block  1
+call    3 never executed
+    %%%%%: 1589-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%: 1589-block  3
+        -: 1590:
+    #####: 1591:            if (!useDouble) {
+    %%%%%: 1591-block  0
+branch  0 never executed
+branch  1 never executed
+        -: 1592:#if RAPIDJSON_64BIT
+        -: 1593:                // Use i64 to store significand in 64-bit architecture
+    #####: 1594:                if (!use64bit)
+    %%%%%: 1594-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1595:                    i64 = i;
+    %%%%%: 1595-block  0
+        -: 1596:
+    #####: 1597:                while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1597-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1597-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1597-block  2
+    %%%%%: 1597-block  3
+    %%%%%: 1597-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1598:                    if (i64 > RAPIDJSON_UINT64_C2(0x1FFFFF, 0xFFFFFFFF)) // 2^53 - 1 for fast path
+    %%%%%: 1598-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1599:                        break;
+    %%%%%: 1599-block  0
+        -: 1600:                    else {
+    #####: 1601:                        i64 = i64 * 10 + static_cast<unsigned>(s.TakePush() - '0');
+    %%%%%: 1601-block  0
+call    0 never executed
+    #####: 1602:                        --expFrac;
+    #####: 1603:                        if (i64 != 0)
+branch  0 never executed
+branch  1 never executed
+    #####: 1604:                            significandDigit++;
+    %%%%%: 1604-block  0
+        -: 1605:                    }
+        -: 1606:                }
+        -: 1607:
+    #####: 1608:                d = static_cast<double>(i64);
+        -: 1609:#else
+        -: 1610:                // Use double to store significand in 32-bit architecture
+        -: 1611:                d = static_cast<double>(use64bit ? i64 : i);
+        -: 1612:#endif
+    #####: 1613:                useDouble = true;
+    %%%%%: 1613-block  0
+        -: 1614:            }
+        -: 1615:
+    #####: 1616:            while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1616-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1616-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1616-block  2
+    %%%%%: 1616-block  3
+    %%%%%: 1616-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1617:                if (significandDigit < 17) {
+    %%%%%: 1617-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1618:                    d = d * 10.0 + (s.TakePush() - '0');
+    %%%%%: 1618-block  0
+call    0 never executed
+    #####: 1619:                    --expFrac;
+    #####: 1620:                    if (RAPIDJSON_LIKELY(d > 0.0))
+branch  0 never executed
+branch  1 never executed
+    #####: 1621:                        significandDigit++;
+    %%%%%: 1621-block  0
+        -: 1622:                }
+        -: 1623:                else
+    #####: 1624:                    s.TakePush();
+    %%%%%: 1624-block  0
+call    0 never executed
+        -: 1625:            }
+        -: 1626:        }
+        -: 1627:        else
+      847: 1628:            decimalPosition = s.Length(); // decimal position at the end of integer.
+      847: 1628-block  0
+call    0 returned 847
+        -: 1629:
+        -: 1630:        // Parse exp = e [ minus / plus ] 1*DIGIT
+      847: 1631:        int exp = 0;
+     847*: 1632:        if (Consume(s, 'e') || Consume(s, 'E')) {
+      847: 1632-block  0
+call    0 returned 847
+branch  1 taken 847 (fallthrough)
+branch  2 taken 0 (throw)
+      847: 1632-block  1
+branch  3 taken 847 (fallthrough)
+branch  4 taken 0
+      847: 1632-block  2
+call    5 returned 847
+branch  6 taken 847 (fallthrough)
+branch  7 taken 0 (throw)
+      847: 1632-block  3
+branch  8 taken 0 (fallthrough)
+branch  9 taken 847
+    %%%%%: 1632-block  4
+      847: 1632-block  5
+      847: 1632-block  6
+branch 10 taken 0 (fallthrough)
+branch 11 taken 847
+    #####: 1633:            if (!useDouble) {
+    %%%%%: 1633-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1634:                d = static_cast<double>(use64bit ? i64 : i);
+    %%%%%: 1634-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1634-block  1
+    %%%%%: 1634-block  2
+    #####: 1635:                useDouble = true;
+    %%%%%: 1635-block  0
+        -: 1636:            }
+        -: 1637:
+    #####: 1638:            bool expMinus = false;
+    #####: 1639:            if (Consume(s, '+'))
+    %%%%%: 1639-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1639-block  1
+branch  3 never executed
+branch  4 never executed
+        -: 1640:                ;
+    #####: 1641:            else if (Consume(s, '-'))
+    %%%%%: 1641-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1641-block  1
+branch  3 never executed
+branch  4 never executed
+    #####: 1642:                expMinus = true;
+    %%%%%: 1642-block  0
+        -: 1643:
+    #####: 1644:            if (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1644-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1644-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1644-block  2
+    %%%%%: 1644-block  3
+    %%%%%: 1644-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1645:                exp = static_cast<int>(s.Take() - '0');
+    %%%%%: 1645-block  0
+call    0 never executed
+    #####: 1646:                if (expMinus) {
+branch  0 never executed
+branch  1 never executed
+        -: 1647:                    // (exp + expFrac) must not underflow int => we're detecting when -exp gets
+        -: 1648:                    // dangerously close to INT_MIN (a pessimistic next digit 9 would push it into
+        -: 1649:                    // underflow territory):
+        -: 1650:                    //
+        -: 1651:                    //        -(exp * 10 + 9) + expFrac >= INT_MIN
+        -: 1652:                    //   <=>  exp <= (expFrac - INT_MIN - 9) / 10
+    #####: 1653:                    RAPIDJSON_ASSERT(expFrac <= 0);
+    %%%%%: 1653-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1653-block  1
+call    2 never executed
+    #####: 1654:                    int maxExp = (expFrac + 2147483639) / 10;
+    %%%%%: 1654-block  0
+        -: 1655:
+    #####: 1656:                    while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1656-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1656-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1656-block  2
+    %%%%%: 1656-block  3
+    %%%%%: 1656-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1657:                        exp = exp * 10 + static_cast<int>(s.Take() - '0');
+    %%%%%: 1657-block  0
+call    0 never executed
+    #####: 1658:                        if (RAPIDJSON_UNLIKELY(exp > maxExp)) {
+branch  0 never executed
+branch  1 never executed
+    #####: 1659:                            while (RAPIDJSON_UNLIKELY(s.Peek() >= '0' && s.Peek() <= '9'))  // Consume the rest of exponent
+    %%%%%: 1659-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1659-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1659-block  2
+    %%%%%: 1659-block  3
+    %%%%%: 1659-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1660:                                s.Take();
+    %%%%%: 1660-block  0
+call    0 never executed
+        -: 1661:                        }
+        -: 1662:                    }
+        -: 1663:                }
+        -: 1664:                else {  // positive exp
+    #####: 1665:                    int maxExp = 308 - expFrac;
+    %%%%%: 1665-block  0
+    #####: 1666:                    while (RAPIDJSON_LIKELY(s.Peek() >= '0' && s.Peek() <= '9')) {
+    %%%%%: 1666-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1666-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%: 1666-block  2
+    %%%%%: 1666-block  3
+    %%%%%: 1666-block  4
+branch  6 never executed
+branch  7 never executed
+    #####: 1667:                        exp = exp * 10 + static_cast<int>(s.Take() - '0');
+    %%%%%: 1667-block  0
+call    0 never executed
+    #####: 1668:                        if (RAPIDJSON_UNLIKELY(exp > maxExp))
+branch  0 never executed
+branch  1 never executed
+    #####: 1669:                            RAPIDJSON_PARSE_ERROR(kParseErrorNumberTooBig, startOffset);
+    %%%%%: 1669-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1669-block  1
+call    3 never executed
+    %%%%%: 1669-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1669-block  3
+        -: 1670:                    }
+        -: 1671:                }
+        -: 1672:            }
+        -: 1673:            else
+    #####: 1674:                RAPIDJSON_PARSE_ERROR(kParseErrorNumberMissExponent, s.Tell());
+    %%%%%: 1674-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1674-block  1
+call    3 never executed
+    %%%%%: 1674-block  2
+call    4 never executed
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%: 1674-block  3
+        -: 1675:
+    #####: 1676:            if (expMinus)
+    %%%%%: 1676-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1677:                exp = -exp;
+    %%%%%: 1677-block  0
+        -: 1678:        }
+        -: 1679:
+        -: 1680:        // Finish parsing, call event according to the type of number.
+      847: 1681:        bool cont = true;
+      847: 1681-block  0
+        -: 1682:
+        -: 1683:        if (parseFlags & kParseNumbersAsStringsFlag) {
+        -: 1684:            if (parseFlags & kParseInsituFlag) {
+        -: 1685:                s.Pop();  // Pop stack no matter if it will be used or not.
+        -: 1686:                typename InputStream::Ch* head = is.PutBegin();
+        -: 1687:                const size_t length = s.Tell() - startOffset;
+        -: 1688:                RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
+        -: 1689:                // unable to insert the \0 character here, it will erase the comma after this number
+        -: 1690:                const typename TargetEncoding::Ch* const str = reinterpret_cast<typename TargetEncoding::Ch*>(head);
+        -: 1691:                cont = handler.RawNumber(str, SizeType(length), false);
+        -: 1692:            }
+        -: 1693:            else {
+        -: 1694:                SizeType numCharsToCopy = static_cast<SizeType>(s.Length());
+        -: 1695:                StringStream srcStream(s.Pop());
+        -: 1696:                StackStream<typename TargetEncoding::Ch> dstStream(stack_);
+        -: 1697:                while (numCharsToCopy--) {
+        -: 1698:                    Transcoder<UTF8<>, TargetEncoding>::Transcode(srcStream, dstStream);
+        -: 1699:                }
+        -: 1700:                dstStream.Put('\0');
+        -: 1701:                const typename TargetEncoding::Ch* str = dstStream.Pop();
+        -: 1702:                const SizeType length = static_cast<SizeType>(dstStream.Length()) - 1;
+        -: 1703:                cont = handler.RawNumber(str, SizeType(length), true);
+        -: 1704:            }
+        -: 1705:        }
+        -: 1706:        else {
+      847: 1707:           size_t length = s.Length();
+      847: 1707-block  0
+call    0 returned 847
+      847: 1708:           const char* decimal = s.Pop();  // Pop stack no matter if it will be used or not.
+call    0 returned 847
+        -: 1709:
+      847: 1710:           if (useDouble) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1711:               int p = exp + expFrac;
+    %%%%%: 1711-block  0
+        -: 1712:               if (parseFlags & kParseFullPrecisionFlag)
+        -: 1713:                   d = internal::StrtodFullPrecision(d, p, decimal, length, decimalPosition, exp);
+        -: 1714:               else
+    #####: 1715:                   d = internal::StrtodNormalPrecision(d, p);
+    %%%%%: 1715-block  0
+call    0 never executed
+        -: 1716:
+        -: 1717:               // Use > max, instead of == inf, to fix bogus warning -Wfloat-equal
+    #####: 1718:               if (d > (std::numeric_limits<double>::max)()) {
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -: 1719:                   // Overflow
+        -: 1720:                   // TODO: internal::StrtodX should report overflow (or underflow)
+    #####: 1721:                   RAPIDJSON_PARSE_ERROR(kParseErrorNumberTooBig, startOffset);
+    %%%%%: 1721-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1721-block  1
+call    3 never executed
+    %%%%%: 1721-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1721-block  3
+        -: 1722:               }
+        -: 1723:
+    #####: 1724:               cont = handler.Double(minus ? -d : d);
+    %%%%%: 1724-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%: 1724-block  1
+    %%%%%: 1724-block  2
+    %%%%%: 1724-block  3
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%: 1724-block  4
+        -: 1725:           }
+      847: 1726:           else if (useNanOrInf) {
+      847: 1726-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1727:               cont = handler.Double(d);
+    %%%%%: 1727-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1727-block  1
+        -: 1728:           }
+        -: 1729:           else {
+      847: 1730:               if (use64bit) {
+      847: 1730-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1731:                   if (minus)
+    %%%%%: 1731-block  0
+branch  0 never executed
+branch  1 never executed
+    #####: 1732:                       cont = handler.Int64(static_cast<int64_t>(~i64 + 1));
+    %%%%%: 1732-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1732-block  1
+        -: 1733:                   else
+    #####: 1734:                       cont = handler.Uint64(i64);
+    %%%%%: 1734-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1734-block  1
+        -: 1735:               }
+        -: 1736:               else {
+      847: 1737:                   if (minus)
+      847: 1737-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1738:                       cont = handler.Int(static_cast<int32_t>(~i + 1));
+    %%%%%: 1738-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1738-block  1
+        -: 1739:                   else
+      847: 1740:                       cont = handler.Uint(i);
+      847: 1740-block  0
+call    0 returned 847
+branch  1 taken 847 (fallthrough)
+branch  2 taken 0 (throw)
+      847: 1740-block  1
+        -: 1741:               }
+        -: 1742:           }
+        -: 1743:        }
+      847: 1744:        if (RAPIDJSON_UNLIKELY(!cont))
+      847: 1744-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 847
+    #####: 1745:            RAPIDJSON_PARSE_ERROR(kParseErrorTermination, startOffset);
+    %%%%%: 1745-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%: 1745-block  1
+call    3 never executed
+    %%%%%: 1745-block  2
+call    4 never executed
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%: 1745-block  3
+        -: 1746:    }
+        -: 1747:
+        -: 1748:    // Parse any JSON value
+        -: 1749:    template<unsigned parseFlags, typename InputStream, typename Handler>
+function _ZN9rapidjson13GenericReaderINS_4UTF8IcEES2_NS_12CrtAllocatorEE10ParseValueILj0ENS_19GenericStringStreamIS2_EENS_15GenericDocumentIS2_NS_19MemoryPoolAllocatorIS3_EES3_EEEEvRT0_RT1_ called 9256 returned 100% blocks executed 82%
+     9256: 1750:    void ParseValue(InputStream& is, Handler& handler) {
+     9256: 1751:        switch (is.Peek()) {
+     9256: 1751-block  0
+call    0 returned 9256
+branch  1 taken 55
+branch  2 taken 0
+branch  3 taken 0
+branch  4 taken 5187
+branch  5 taken 1821
+branch  6 taken 1346
+branch  7 taken 847
+       55: 1752:            case 'n': ParseNull  <parseFlags>(is, handler); break;
+       55: 1752-block  0
+call    0 returned 55
+    #####: 1753:            case 't': ParseTrue  <parseFlags>(is, handler); break;
+    %%%%%: 1753-block  0
+call    0 never executed
+    #####: 1754:            case 'f': ParseFalse <parseFlags>(is, handler); break;
+    %%%%%: 1754-block  0
+call    0 never executed
+     5187: 1755:            case '"': ParseString<parseFlags>(is, handler); break;
+     5187: 1755-block  0
+call    0 returned 5187
+     1821: 1756:            case '{': ParseObject<parseFlags>(is, handler); break;
+     1821: 1756-block  0
+call    0 returned 1821
+     1346: 1757:            case '[': ParseArray <parseFlags>(is, handler); break;
+     1346: 1757-block  0
+call    0 returned 1346
+      847: 1758:            default :
+      847: 1759:                      ParseNumber<parseFlags>(is, handler);
+      847: 1759-block  0
+call    0 returned 847
+      847: 1760:                      break;
+        -: 1761:
+        -: 1762:        }
+     9256: 1763:    }
+        -: 1764:
+        -: 1765:    // Iterative Parsing
+        -: 1766:
+        -: 1767:    // States
+        -: 1768:    enum IterativeParsingState {
+        -: 1769:        IterativeParsingFinishState = 0, // sink states at top
+        -: 1770:        IterativeParsingErrorState,      // sink states at top
+        -: 1771:        IterativeParsingStartState,
+        -: 1772:
+        -: 1773:        // Object states
+        -: 1774:        IterativeParsingObjectInitialState,
+        -: 1775:        IterativeParsingMemberKeyState,
+        -: 1776:        IterativeParsingMemberValueState,
+        -: 1777:        IterativeParsingObjectFinishState,
+        -: 1778:
+        -: 1779:        // Array states
+        -: 1780:        IterativeParsingArrayInitialState,
+        -: 1781:        IterativeParsingElementState,
+        -: 1782:        IterativeParsingArrayFinishState,
+        -: 1783:
+        -: 1784:        // Single value state
+        -: 1785:        IterativeParsingValueState,
+        -: 1786:
+        -: 1787:        // Delimiter states (at bottom)
+        -: 1788:        IterativeParsingElementDelimiterState,
+        -: 1789:        IterativeParsingMemberDelimiterState,
+        -: 1790:        IterativeParsingKeyValueDelimiterState,
+        -: 1791:
+        -: 1792:        cIterativeParsingStateCount
+        -: 1793:    };
+        -: 1794:
+        -: 1795:    // Tokens
+        -: 1796:    enum Token {
+        -: 1797:        LeftBracketToken = 0,
+        -: 1798:        RightBracketToken,
+        -: 1799:
+        -: 1800:        LeftCurlyBracketToken,
+        -: 1801:        RightCurlyBracketToken,
+        -: 1802:
+        -: 1803:        CommaToken,
+        -: 1804:        ColonToken,
+        -: 1805:
+        -: 1806:        StringToken,
+        -: 1807:        FalseToken,
+        -: 1808:        TrueToken,
+        -: 1809:        NullToken,
+        -: 1810:        NumberToken,
+        -: 1811:
+        -: 1812:        kTokenCount
+        -: 1813:    };
+        -: 1814:
+        -: 1815:    RAPIDJSON_FORCEINLINE Token Tokenize(Ch c) const {
+        -: 1816:
+        -: 1817://!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+        -: 1818:#define N NumberToken
+        -: 1819:#define N16 N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+        -: 1820:        // Maps from ASCII to Token
+        -: 1821:        static const unsigned char tokenMap[256] = {
+        -: 1822:            N16, // 00~0F
+        -: 1823:            N16, // 10~1F
+        -: 1824:            N, N, StringToken, N, N, N, N, N, N, N, N, N, CommaToken, N, N, N, // 20~2F
+        -: 1825:            N, N, N, N, N, N, N, N, N, N, ColonToken, N, N, N, N, N, // 30~3F
+        -: 1826:            N16, // 40~4F
+        -: 1827:            N, N, N, N, N, N, N, N, N, N, N, LeftBracketToken, N, RightBracketToken, N, N, // 50~5F
+        -: 1828:            N, N, N, N, N, N, FalseToken, N, N, N, N, N, N, N, NullToken, N, // 60~6F
+        -: 1829:            N, N, N, N, TrueToken, N, N, N, N, N, N, LeftCurlyBracketToken, N, RightCurlyBracketToken, N, N, // 70~7F
+        -: 1830:            N16, N16, N16, N16, N16, N16, N16, N16 // 80~FF
+        -: 1831:        };
+        -: 1832:#undef N
+        -: 1833:#undef N16
+        -: 1834://!@endcond
+        -: 1835:
+        -: 1836:        if (sizeof(Ch) == 1 || static_cast<unsigned>(c) < 256)
+        -: 1837:            return static_cast<Token>(tokenMap[static_cast<unsigned char>(c)]);
+        -: 1838:        else
+        -: 1839:            return NumberToken;
+        -: 1840:    }
+        -: 1841:
+        -: 1842:    RAPIDJSON_FORCEINLINE IterativeParsingState Predict(IterativeParsingState state, Token token) const {
+        -: 1843:        // current state x one lookahead token -> new state
+        -: 1844:        static const char G[cIterativeParsingStateCount][kTokenCount] = {
+        -: 1845:            // Finish(sink state)
+        -: 1846:            {
+        -: 1847:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1848:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1849:                IterativeParsingErrorState
+        -: 1850:            },
+        -: 1851:            // Error(sink state)
+        -: 1852:            {
+        -: 1853:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1854:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1855:                IterativeParsingErrorState
+        -: 1856:            },
+        -: 1857:            // Start
+        -: 1858:            {
+        -: 1859:                IterativeParsingArrayInitialState,  // Left bracket
+        -: 1860:                IterativeParsingErrorState,         // Right bracket
+        -: 1861:                IterativeParsingObjectInitialState, // Left curly bracket
+        -: 1862:                IterativeParsingErrorState,         // Right curly bracket
+        -: 1863:                IterativeParsingErrorState,         // Comma
+        -: 1864:                IterativeParsingErrorState,         // Colon
+        -: 1865:                IterativeParsingValueState,         // String
+        -: 1866:                IterativeParsingValueState,         // False
+        -: 1867:                IterativeParsingValueState,         // True
+        -: 1868:                IterativeParsingValueState,         // Null
+        -: 1869:                IterativeParsingValueState          // Number
+        -: 1870:            },
+        -: 1871:            // ObjectInitial
+        -: 1872:            {
+        -: 1873:                IterativeParsingErrorState,         // Left bracket
+        -: 1874:                IterativeParsingErrorState,         // Right bracket
+        -: 1875:                IterativeParsingErrorState,         // Left curly bracket
+        -: 1876:                IterativeParsingObjectFinishState,  // Right curly bracket
+        -: 1877:                IterativeParsingErrorState,         // Comma
+        -: 1878:                IterativeParsingErrorState,         // Colon
+        -: 1879:                IterativeParsingMemberKeyState,     // String
+        -: 1880:                IterativeParsingErrorState,         // False
+        -: 1881:                IterativeParsingErrorState,         // True
+        -: 1882:                IterativeParsingErrorState,         // Null
+        -: 1883:                IterativeParsingErrorState          // Number
+        -: 1884:            },
+        -: 1885:            // MemberKey
+        -: 1886:            {
+        -: 1887:                IterativeParsingErrorState,             // Left bracket
+        -: 1888:                IterativeParsingErrorState,             // Right bracket
+        -: 1889:                IterativeParsingErrorState,             // Left curly bracket
+        -: 1890:                IterativeParsingErrorState,             // Right curly bracket
+        -: 1891:                IterativeParsingErrorState,             // Comma
+        -: 1892:                IterativeParsingKeyValueDelimiterState, // Colon
+        -: 1893:                IterativeParsingErrorState,             // String
+        -: 1894:                IterativeParsingErrorState,             // False
+        -: 1895:                IterativeParsingErrorState,             // True
+        -: 1896:                IterativeParsingErrorState,             // Null
+        -: 1897:                IterativeParsingErrorState              // Number
+        -: 1898:            },
+        -: 1899:            // MemberValue
+        -: 1900:            {
+        -: 1901:                IterativeParsingErrorState,             // Left bracket
+        -: 1902:                IterativeParsingErrorState,             // Right bracket
+        -: 1903:                IterativeParsingErrorState,             // Left curly bracket
+        -: 1904:                IterativeParsingObjectFinishState,      // Right curly bracket
+        -: 1905:                IterativeParsingMemberDelimiterState,   // Comma
+        -: 1906:                IterativeParsingErrorState,             // Colon
+        -: 1907:                IterativeParsingErrorState,             // String
+        -: 1908:                IterativeParsingErrorState,             // False
+        -: 1909:                IterativeParsingErrorState,             // True
+        -: 1910:                IterativeParsingErrorState,             // Null
+        -: 1911:                IterativeParsingErrorState              // Number
+        -: 1912:            },
+        -: 1913:            // ObjectFinish(sink state)
+        -: 1914:            {
+        -: 1915:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1916:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1917:                IterativeParsingErrorState
+        -: 1918:            },
+        -: 1919:            // ArrayInitial
+        -: 1920:            {
+        -: 1921:                IterativeParsingArrayInitialState,      // Left bracket(push Element state)
+        -: 1922:                IterativeParsingArrayFinishState,       // Right bracket
+        -: 1923:                IterativeParsingObjectInitialState,     // Left curly bracket(push Element state)
+        -: 1924:                IterativeParsingErrorState,             // Right curly bracket
+        -: 1925:                IterativeParsingErrorState,             // Comma
+        -: 1926:                IterativeParsingErrorState,             // Colon
+        -: 1927:                IterativeParsingElementState,           // String
+        -: 1928:                IterativeParsingElementState,           // False
+        -: 1929:                IterativeParsingElementState,           // True
+        -: 1930:                IterativeParsingElementState,           // Null
+        -: 1931:                IterativeParsingElementState            // Number
+        -: 1932:            },
+        -: 1933:            // Element
+        -: 1934:            {
+        -: 1935:                IterativeParsingErrorState,             // Left bracket
+        -: 1936:                IterativeParsingArrayFinishState,       // Right bracket
+        -: 1937:                IterativeParsingErrorState,             // Left curly bracket
+        -: 1938:                IterativeParsingErrorState,             // Right curly bracket
+        -: 1939:                IterativeParsingElementDelimiterState,  // Comma
+        -: 1940:                IterativeParsingErrorState,             // Colon
+        -: 1941:                IterativeParsingErrorState,             // String
+        -: 1942:                IterativeParsingErrorState,             // False
+        -: 1943:                IterativeParsingErrorState,             // True
+        -: 1944:                IterativeParsingErrorState,             // Null
+        -: 1945:                IterativeParsingErrorState              // Number
+        -: 1946:            },
+        -: 1947:            // ArrayFinish(sink state)
+        -: 1948:            {
+        -: 1949:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1950:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1951:                IterativeParsingErrorState
+        -: 1952:            },
+        -: 1953:            // Single Value (sink state)
+        -: 1954:            {
+        -: 1955:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1956:                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+        -: 1957:                IterativeParsingErrorState
+        -: 1958:            },
+        -: 1959:            // ElementDelimiter
+        -: 1960:            {
+        -: 1961:                IterativeParsingArrayInitialState,      // Left bracket(push Element state)
+        -: 1962:                IterativeParsingArrayFinishState,       // Right bracket
+        -: 1963:                IterativeParsingObjectInitialState,     // Left curly bracket(push Element state)
+        -: 1964:                IterativeParsingErrorState,             // Right curly bracket
+        -: 1965:                IterativeParsingErrorState,             // Comma
+        -: 1966:                IterativeParsingErrorState,             // Colon
+        -: 1967:                IterativeParsingElementState,           // String
+        -: 1968:                IterativeParsingElementState,           // False
+        -: 1969:                IterativeParsingElementState,           // True
+        -: 1970:                IterativeParsingElementState,           // Null
+        -: 1971:                IterativeParsingElementState            // Number
+        -: 1972:            },
+        -: 1973:            // MemberDelimiter
+        -: 1974:            {
+        -: 1975:                IterativeParsingErrorState,         // Left bracket
+        -: 1976:                IterativeParsingErrorState,         // Right bracket
+        -: 1977:                IterativeParsingErrorState,         // Left curly bracket
+        -: 1978:                IterativeParsingObjectFinishState,  // Right curly bracket
+        -: 1979:                IterativeParsingErrorState,         // Comma
+        -: 1980:                IterativeParsingErrorState,         // Colon
+        -: 1981:                IterativeParsingMemberKeyState,     // String
+        -: 1982:                IterativeParsingErrorState,         // False
+        -: 1983:                IterativeParsingErrorState,         // True
+        -: 1984:                IterativeParsingErrorState,         // Null
+        -: 1985:                IterativeParsingErrorState          // Number
+        -: 1986:            },
+        -: 1987:            // KeyValueDelimiter
+        -: 1988:            {
+        -: 1989:                IterativeParsingArrayInitialState,      // Left bracket(push MemberValue state)
+        -: 1990:                IterativeParsingErrorState,             // Right bracket
+        -: 1991:                IterativeParsingObjectInitialState,     // Left curly bracket(push MemberValue state)
+        -: 1992:                IterativeParsingErrorState,             // Right curly bracket
+        -: 1993:                IterativeParsingErrorState,             // Comma
+        -: 1994:                IterativeParsingErrorState,             // Colon
+        -: 1995:                IterativeParsingMemberValueState,       // String
+        -: 1996:                IterativeParsingMemberValueState,       // False
+        -: 1997:                IterativeParsingMemberValueState,       // True
+        -: 1998:                IterativeParsingMemberValueState,       // Null
+        -: 1999:                IterativeParsingMemberValueState        // Number
+        -: 2000:            },
+        -: 2001:        }; // End of G
+        -: 2002:
+        -: 2003:        return static_cast<IterativeParsingState>(G[state][token]);
+        -: 2004:    }
+        -: 2005:
+        -: 2006:    // Make an advance in the token stream and state based on the candidate destination state which was returned by Transit().
+        -: 2007:    // May return a new state on state pop.
+        -: 2008:    template <unsigned parseFlags, typename InputStream, typename Handler>
+        -: 2009:    RAPIDJSON_FORCEINLINE IterativeParsingState Transit(IterativeParsingState src, Token token, IterativeParsingState dst, InputStream& is, Handler& handler) {
+        -: 2010:        (void)token;
+        -: 2011:
+        -: 2012:        switch (dst) {
+        -: 2013:        case IterativeParsingErrorState:
+        -: 2014:            return dst;
+        -: 2015:
+        -: 2016:        case IterativeParsingObjectInitialState:
+        -: 2017:        case IterativeParsingArrayInitialState:
+        -: 2018:        {
+        -: 2019:            // Push the state(Element or MemeberValue) if we are nested in another array or value of member.
+        -: 2020:            // In this way we can get the correct state on ObjectFinish or ArrayFinish by frame pop.
+        -: 2021:            IterativeParsingState n = src;
+        -: 2022:            if (src == IterativeParsingArrayInitialState || src == IterativeParsingElementDelimiterState)
+        -: 2023:                n = IterativeParsingElementState;
+        -: 2024:            else if (src == IterativeParsingKeyValueDelimiterState)
+        -: 2025:                n = IterativeParsingMemberValueState;
+        -: 2026:            // Push current state.
+        -: 2027:            *stack_.template Push<SizeType>(1) = n;
+        -: 2028:            // Initialize and push the member/element count.
+        -: 2029:            *stack_.template Push<SizeType>(1) = 0;
+        -: 2030:            // Call handler
+        -: 2031:            bool hr = (dst == IterativeParsingObjectInitialState) ? handler.StartObject() : handler.StartArray();
+        -: 2032:            // On handler short circuits the parsing.
+        -: 2033:            if (!hr) {
+        -: 2034:                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+        -: 2035:                return IterativeParsingErrorState;
+        -: 2036:            }
+        -: 2037:            else {
+        -: 2038:                is.Take();
+        -: 2039:                return dst;
+        -: 2040:            }
+        -: 2041:        }
+        -: 2042:
+        -: 2043:        case IterativeParsingMemberKeyState:
+        -: 2044:            ParseString<parseFlags>(is, handler, true);
+        -: 2045:            if (HasParseError())
+        -: 2046:                return IterativeParsingErrorState;
+        -: 2047:            else
+        -: 2048:                return dst;
+        -: 2049:
+        -: 2050:        case IterativeParsingKeyValueDelimiterState:
+        -: 2051:            RAPIDJSON_ASSERT(token == ColonToken);
+        -: 2052:            is.Take();
+        -: 2053:            return dst;
+        -: 2054:
+        -: 2055:        case IterativeParsingMemberValueState:
+        -: 2056:            // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
+        -: 2057:            ParseValue<parseFlags>(is, handler);
+        -: 2058:            if (HasParseError()) {
+        -: 2059:                return IterativeParsingErrorState;
+        -: 2060:            }
+        -: 2061:            return dst;
+        -: 2062:
+        -: 2063:        case IterativeParsingElementState:
+        -: 2064:            // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
+        -: 2065:            ParseValue<parseFlags>(is, handler);
+        -: 2066:            if (HasParseError()) {
+        -: 2067:                return IterativeParsingErrorState;
+        -: 2068:            }
+        -: 2069:            return dst;
+        -: 2070:
+        -: 2071:        case IterativeParsingMemberDelimiterState:
+        -: 2072:        case IterativeParsingElementDelimiterState:
+        -: 2073:            is.Take();
+        -: 2074:            // Update member/element count.
+        -: 2075:            *stack_.template Top<SizeType>() = *stack_.template Top<SizeType>() + 1;
+        -: 2076:            return dst;
+        -: 2077:
+        -: 2078:        case IterativeParsingObjectFinishState:
+        -: 2079:        {
+        -: 2080:            // Transit from delimiter is only allowed when trailing commas are enabled
+        -: 2081:            if (!(parseFlags & kParseTrailingCommasFlag) && src == IterativeParsingMemberDelimiterState) {
+        -: 2082:                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorObjectMissName, is.Tell());
+        -: 2083:                return IterativeParsingErrorState;
+        -: 2084:            }
+        -: 2085:            // Get member count.
+        -: 2086:            SizeType c = *stack_.template Pop<SizeType>(1);
+        -: 2087:            // If the object is not empty, count the last member.
+        -: 2088:            if (src == IterativeParsingMemberValueState)
+        -: 2089:                ++c;
+        -: 2090:            // Restore the state.
+        -: 2091:            IterativeParsingState n = static_cast<IterativeParsingState>(*stack_.template Pop<SizeType>(1));
+        -: 2092:            // Transit to Finish state if this is the topmost scope.
+        -: 2093:            if (n == IterativeParsingStartState)
+        -: 2094:                n = IterativeParsingFinishState;
+        -: 2095:            // Call handler
+        -: 2096:            bool hr = handler.EndObject(c);
+        -: 2097:            // On handler short circuits the parsing.
+        -: 2098:            if (!hr) {
+        -: 2099:                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+        -: 2100:                return IterativeParsingErrorState;
+        -: 2101:            }
+        -: 2102:            else {
+        -: 2103:                is.Take();
+        -: 2104:                return n;
+        -: 2105:            }
+        -: 2106:        }
+        -: 2107:
+        -: 2108:        case IterativeParsingArrayFinishState:
+        -: 2109:        {
+        -: 2110:            // Transit from delimiter is only allowed when trailing commas are enabled
+        -: 2111:            if (!(parseFlags & kParseTrailingCommasFlag) && src == IterativeParsingElementDelimiterState) {
+        -: 2112:                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorValueInvalid, is.Tell());
+        -: 2113:                return IterativeParsingErrorState;
+        -: 2114:            }
+        -: 2115:            // Get element count.
+        -: 2116:            SizeType c = *stack_.template Pop<SizeType>(1);
+        -: 2117:            // If the array is not empty, count the last element.
+        -: 2118:            if (src == IterativeParsingElementState)
+        -: 2119:                ++c;
+        -: 2120:            // Restore the state.
+        -: 2121:            IterativeParsingState n = static_cast<IterativeParsingState>(*stack_.template Pop<SizeType>(1));
+        -: 2122:            // Transit to Finish state if this is the topmost scope.
+        -: 2123:            if (n == IterativeParsingStartState)
+        -: 2124:                n = IterativeParsingFinishState;
+        -: 2125:            // Call handler
+        -: 2126:            bool hr = handler.EndArray(c);
+        -: 2127:            // On handler short circuits the parsing.
+        -: 2128:            if (!hr) {
+        -: 2129:                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+        -: 2130:                return IterativeParsingErrorState;
+        -: 2131:            }
+        -: 2132:            else {
+        -: 2133:                is.Take();
+        -: 2134:                return n;
+        -: 2135:            }
+        -: 2136:        }
+        -: 2137:
+        -: 2138:        default:
+        -: 2139:            // This branch is for IterativeParsingValueState actually.
+        -: 2140:            // Use `default:` rather than
+        -: 2141:            // `case IterativeParsingValueState:` is for code coverage.
+        -: 2142:
+        -: 2143:            // The IterativeParsingStartState is not enumerated in this switch-case.
+        -: 2144:            // It is impossible for that case. And it can be caught by following assertion.
+        -: 2145:
+        -: 2146:            // The IterativeParsingFinishState is not enumerated in this switch-case either.
+        -: 2147:            // It is a "derivative" state which cannot triggered from Predict() directly.
+        -: 2148:            // Therefore it cannot happen here. And it can be caught by following assertion.
+        -: 2149:            RAPIDJSON_ASSERT(dst == IterativeParsingValueState);
+        -: 2150:
+        -: 2151:            // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
+        -: 2152:            ParseValue<parseFlags>(is, handler);
+        -: 2153:            if (HasParseError()) {
+        -: 2154:                return IterativeParsingErrorState;
+        -: 2155:            }
+        -: 2156:            return IterativeParsingFinishState;
+        -: 2157:        }
+        -: 2158:    }
+        -: 2159:
+        -: 2160:    template <typename InputStream>
+        -: 2161:    void HandleError(IterativeParsingState src, InputStream& is) {
+        -: 2162:        if (HasParseError()) {
+        -: 2163:            // Error flag has been set.
+        -: 2164:            return;
+        -: 2165:        }
+        -: 2166:
+        -: 2167:        switch (src) {
+        -: 2168:        case IterativeParsingStartState:            RAPIDJSON_PARSE_ERROR(kParseErrorDocumentEmpty, is.Tell()); return;
+        -: 2169:        case IterativeParsingFinishState:           RAPIDJSON_PARSE_ERROR(kParseErrorDocumentRootNotSingular, is.Tell()); return;
+        -: 2170:        case IterativeParsingObjectInitialState:
+        -: 2171:        case IterativeParsingMemberDelimiterState:  RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell()); return;
+        -: 2172:        case IterativeParsingMemberKeyState:        RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell()); return;
+        -: 2173:        case IterativeParsingMemberValueState:      RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); return;
+        -: 2174:        case IterativeParsingKeyValueDelimiterState:
+        -: 2175:        case IterativeParsingArrayInitialState:
+        -: 2176:        case IterativeParsingElementDelimiterState: RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell()); return;
+        -: 2177:        default: RAPIDJSON_ASSERT(src == IterativeParsingElementState); RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell()); return;
+        -: 2178:        }
+        -: 2179:    }
+        -: 2180:
+        -: 2181:    RAPIDJSON_FORCEINLINE bool IsIterativeParsingDelimiterState(IterativeParsingState s) const {
+        -: 2182:        return s >= IterativeParsingElementDelimiterState;
+        -: 2183:    }
+        -: 2184:
+        -: 2185:    RAPIDJSON_FORCEINLINE bool IsIterativeParsingCompleteState(IterativeParsingState s) const {
+        -: 2186:        return s <= IterativeParsingErrorState;
+        -: 2187:    }
+        -: 2188:
+        -: 2189:    template <unsigned parseFlags, typename InputStream, typename Handler>
+        -: 2190:    ParseResult IterativeParse(InputStream& is, Handler& handler) {
+        -: 2191:        parseResult_.Clear();
+        -: 2192:        ClearStackOnExit scope(*this);
+        -: 2193:        IterativeParsingState state = IterativeParsingStartState;
+        -: 2194:
+        -: 2195:        SkipWhitespaceAndComments<parseFlags>(is);
+        -: 2196:        RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        -: 2197:        while (is.Peek() != '\0') {
+        -: 2198:            Token t = Tokenize(is.Peek());
+        -: 2199:            IterativeParsingState n = Predict(state, t);
+        -: 2200:            IterativeParsingState d = Transit<parseFlags>(state, t, n, is, handler);
+        -: 2201:
+        -: 2202:            if (d == IterativeParsingErrorState) {
+        -: 2203:                HandleError(state, is);
+        -: 2204:                break;
+        -: 2205:            }
+        -: 2206:
+        -: 2207:            state = d;
+        -: 2208:
+        -: 2209:            // Do not further consume streams if a root JSON has been parsed.
+        -: 2210:            if ((parseFlags & kParseStopWhenDoneFlag) && state == IterativeParsingFinishState)
+        -: 2211:                break;
+        -: 2212:
+        -: 2213:            SkipWhitespaceAndComments<parseFlags>(is);
+        -: 2214:            RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        -: 2215:        }
+        -: 2216:
+        -: 2217:        // Handle the end of file.
+        -: 2218:        if (state != IterativeParsingFinishState)
+        -: 2219:            HandleError(state, is);
+        -: 2220:
+        -: 2221:        return parseResult_;
+        -: 2222:    }
+        -: 2223:
+        -: 2224:    static const size_t kDefaultStackCapacity = 256;    //!< Default stack capacity in bytes for storing a single decoded string.
+        -: 2225:    internal::Stack<StackAllocator> stack_;  //!< A stack for storing decoded string temporarily during non-destructive parsing.
+        -: 2226:    ParseResult parseResult_;
+        -: 2227:    IterativeParsingState state_;
+        -: 2228:}; // class GenericReader
+        -: 2229:
+        -: 2230://! Reader with UTF8 encoding and default allocator.
+        -: 2231:typedef GenericReader<UTF8<>, UTF8<> > Reader;
+        -: 2232:
+        -: 2233:RAPIDJSON_NAMESPACE_END
+        -: 2234:
+        -: 2235:#if defined(__clang__) || defined(_MSC_VER)
+        -: 2236:RAPIDJSON_DIAG_POP
+        -: 2237:#endif
+        -: 2238:
+        -: 2239:
+        -: 2240:#ifdef __GNUC__
+        -: 2241:RAPIDJSON_DIAG_POP
+        -: 2242:#endif
+        -: 2243:
+        -: 2244:#endif // RAPIDJSON_READER_H_

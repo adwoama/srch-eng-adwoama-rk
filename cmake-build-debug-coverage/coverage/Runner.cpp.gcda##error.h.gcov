@@ -1,0 +1,234 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/error/error.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2:// 
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed 
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#ifndef RAPIDJSON_ERROR_ERROR_H_
+        -:   16:#define RAPIDJSON_ERROR_ERROR_H_
+        -:   17:
+        -:   18:#include "../rapidjson.h"
+        -:   19:
+        -:   20:#ifdef __clang__
+        -:   21:RAPIDJSON_DIAG_PUSH
+        -:   22:RAPIDJSON_DIAG_OFF(padded)
+        -:   23:#endif
+        -:   24:
+        -:   25:/*! \file error.h */
+        -:   26:
+        -:   27:/*! \defgroup RAPIDJSON_ERRORS RapidJSON error handling */
+        -:   28:
+        -:   29:///////////////////////////////////////////////////////////////////////////////
+        -:   30:// RAPIDJSON_ERROR_CHARTYPE
+        -:   31:
+        -:   32://! Character type of error messages.
+        -:   33:/*! \ingroup RAPIDJSON_ERRORS
+        -:   34:    The default character type is \c char.
+        -:   35:    On Windows, user can define this macro as \c TCHAR for supporting both
+        -:   36:    unicode/non-unicode settings.
+        -:   37:*/
+        -:   38:#ifndef RAPIDJSON_ERROR_CHARTYPE
+        -:   39:#define RAPIDJSON_ERROR_CHARTYPE char
+        -:   40:#endif
+        -:   41:
+        -:   42:///////////////////////////////////////////////////////////////////////////////
+        -:   43:// RAPIDJSON_ERROR_STRING
+        -:   44:
+        -:   45://! Macro for converting string literial to \ref RAPIDJSON_ERROR_CHARTYPE[].
+        -:   46:/*! \ingroup RAPIDJSON_ERRORS
+        -:   47:    By default this conversion macro does nothing.
+        -:   48:    On Windows, user can define this macro as \c _T(x) for supporting both
+        -:   49:    unicode/non-unicode settings.
+        -:   50:*/
+        -:   51:#ifndef RAPIDJSON_ERROR_STRING
+        -:   52:#define RAPIDJSON_ERROR_STRING(x) x
+        -:   53:#endif
+        -:   54:
+        -:   55:RAPIDJSON_NAMESPACE_BEGIN
+        -:   56:
+        -:   57:///////////////////////////////////////////////////////////////////////////////
+        -:   58:// ParseErrorCode
+        -:   59:
+        -:   60://! Error code of parsing.
+        -:   61:/*! \ingroup RAPIDJSON_ERRORS
+        -:   62:    \see GenericReader::Parse, GenericReader::GetParseErrorCode
+        -:   63:*/
+        -:   64:enum ParseErrorCode {
+        -:   65:    kParseErrorNone = 0,                        //!< No error.
+        -:   66:
+        -:   67:    kParseErrorDocumentEmpty,                   //!< The document is empty.
+        -:   68:    kParseErrorDocumentRootNotSingular,         //!< The document root must not follow by other values.
+        -:   69:
+        -:   70:    kParseErrorValueInvalid,                    //!< Invalid value.
+        -:   71:
+        -:   72:    kParseErrorObjectMissName,                  //!< Missing a name for object member.
+        -:   73:    kParseErrorObjectMissColon,                 //!< Missing a colon after a name of object member.
+        -:   74:    kParseErrorObjectMissCommaOrCurlyBracket,   //!< Missing a comma or '}' after an object member.
+        -:   75:
+        -:   76:    kParseErrorArrayMissCommaOrSquareBracket,   //!< Missing a comma or ']' after an array element.
+        -:   77:
+        -:   78:    kParseErrorStringUnicodeEscapeInvalidHex,   //!< Incorrect hex digit after \\u escape in string.
+        -:   79:    kParseErrorStringUnicodeSurrogateInvalid,   //!< The surrogate pair in string is invalid.
+        -:   80:    kParseErrorStringEscapeInvalid,             //!< Invalid escape character in string.
+        -:   81:    kParseErrorStringMissQuotationMark,         //!< Missing a closing quotation mark in string.
+        -:   82:    kParseErrorStringInvalidEncoding,           //!< Invalid encoding in string.
+        -:   83:
+        -:   84:    kParseErrorNumberTooBig,                    //!< Number too big to be stored in double.
+        -:   85:    kParseErrorNumberMissFraction,              //!< Miss fraction part in number.
+        -:   86:    kParseErrorNumberMissExponent,              //!< Miss exponent in number.
+        -:   87:
+        -:   88:    kParseErrorTermination,                     //!< Parsing was terminated.
+        -:   89:    kParseErrorUnspecificSyntaxError            //!< Unspecific syntax error.
+        -:   90:};
+        -:   91:
+        -:   92://! Result of parsing (wraps ParseErrorCode)
+        -:   93:/*!
+        -:   94:    \ingroup RAPIDJSON_ERRORS
+        -:   95:    \code
+        -:   96:        Document doc;
+        -:   97:        ParseResult ok = doc.Parse("[42]");
+        -:   98:        if (!ok) {
+        -:   99:            fprintf(stderr, "JSON parse error: %s (%u)",
+        -:  100:                    GetParseError_En(ok.Code()), ok.Offset());
+        -:  101:            exit(EXIT_FAILURE);
+        -:  102:        }
+        -:  103:    \endcode
+        -:  104:    \see GenericReader::Parse, GenericDocument::Parse
+        -:  105:*/
+        -:  106:struct ParseResult {
+        -:  107:    //!! Unspecified boolean type
+        -:  108:    typedef bool (ParseResult::*BooleanType)() const;
+        -:  109:public:
+        -:  110:    //! Default constructor, no error.
+function _ZN9rapidjson11ParseResultC2Ev called 10 returned 100% blocks executed 100%
+       10:  111:    ParseResult() : code_(kParseErrorNone), offset_(0) {}
+        -:  112:    //! Constructor to set an error.
+        -:  113:    ParseResult(ParseErrorCode code, size_t offset) : code_(code), offset_(offset) {}
+        -:  114:
+        -:  115:    //! Get the error code.
+        -:  116:    ParseErrorCode Code() const { return code_; }
+        -:  117:    //! Get the error offset, if \ref IsError(), 0 otherwise.
+        -:  118:    size_t Offset() const { return offset_; }
+        -:  119:
+        -:  120:    //! Explicit conversion to \c bool, returns \c true, iff !\ref IsError().
+function _ZNK9rapidjson11ParseResultcvMS0_KFbvEEv called 5 returned 100% blocks executed 83%
+       5*:  121:    operator BooleanType() const { return !IsError() ? &ParseResult::IsError : NULL; }
+        5:  121-block  0
+call    0 returned 5
+branch  1 taken 0 (fallthrough)
+branch  2 taken 5
+    %%%%%:  121-block  1
+        5:  121-block  2
+        -:  122:    //! Whether the result is an error.
+function _ZNK9rapidjson11ParseResult7IsErrorEv called 64523 returned 100% blocks executed 100%
+    64523:  123:    bool IsError() const { return code_ != kParseErrorNone; }
+    64523:  123-block  0
+        -:  124:
+        -:  125:    bool operator==(const ParseResult& that) const { return code_ == that.code_; }
+        -:  126:    bool operator==(ParseErrorCode code) const { return code_ == code; }
+        -:  127:    friend bool operator==(ParseErrorCode code, const ParseResult & err) { return code == err.code_; }
+        -:  128:
+        -:  129:    bool operator!=(const ParseResult& that) const { return !(*this == that); }
+        -:  130:    bool operator!=(ParseErrorCode code) const { return !(*this == code); }
+        -:  131:    friend bool operator!=(ParseErrorCode code, const ParseResult & err) { return err != code; }
+        -:  132:
+        -:  133:    //! Reset error code.
+function _ZN9rapidjson11ParseResult5ClearEv called 5 returned 100% blocks executed 100%
+        5:  134:    void Clear() { Set(kParseErrorNone); }
+        5:  134-block  0
+call    0 returned 5
+        -:  135:    //! Update error code and offset.
+function _ZN9rapidjson11ParseResult3SetENS_14ParseErrorCodeEm called 5 returned 100% blocks executed 100%
+        5:  136:    void Set(ParseErrorCode code, size_t offset = 0) { code_ = code; offset_ = offset; }
+        -:  137:
+        -:  138:private:
+        -:  139:    ParseErrorCode code_;
+        -:  140:    size_t offset_;
+        -:  141:};
+        -:  142:
+        -:  143://! Function pointer type of GetParseError().
+        -:  144:/*! \ingroup RAPIDJSON_ERRORS
+        -:  145:
+        -:  146:    This is the prototype for \c GetParseError_X(), where \c X is a locale.
+        -:  147:    User can dynamically change locale in runtime, e.g.:
+        -:  148:\code
+        -:  149:    GetParseErrorFunc GetParseError = GetParseError_En; // or whatever
+        -:  150:    const RAPIDJSON_ERROR_CHARTYPE* s = GetParseError(document.GetParseErrorCode());
+        -:  151:\endcode
+        -:  152:*/
+        -:  153:typedef const RAPIDJSON_ERROR_CHARTYPE* (*GetParseErrorFunc)(ParseErrorCode);
+        -:  154:
+        -:  155:///////////////////////////////////////////////////////////////////////////////
+        -:  156:// ValidateErrorCode
+        -:  157:
+        -:  158://! Error codes when validating.
+        -:  159:/*! \ingroup RAPIDJSON_ERRORS
+        -:  160:    \see GenericSchemaValidator
+        -:  161:*/
+        -:  162:enum ValidateErrorCode {
+        -:  163:    kValidateErrors    = -1,                   //!< Top level error code when kValidateContinueOnErrorsFlag set.
+        -:  164:    kValidateErrorNone = 0,                    //!< No error.
+        -:  165:
+        -:  166:    kValidateErrorMultipleOf,                  //!< Number is not a multiple of the 'multipleOf' value.
+        -:  167:    kValidateErrorMaximum,                     //!< Number is greater than the 'maximum' value.
+        -:  168:    kValidateErrorExclusiveMaximum,            //!< Number is greater than or equal to the 'maximum' value.
+        -:  169:    kValidateErrorMinimum,                     //!< Number is less than the 'minimum' value.
+        -:  170:    kValidateErrorExclusiveMinimum,            //!< Number is less than or equal to the 'minimum' value.
+        -:  171:
+        -:  172:    kValidateErrorMaxLength,                   //!< String is longer than the 'maxLength' value.
+        -:  173:    kValidateErrorMinLength,                   //!< String is longer than the 'maxLength' value.
+        -:  174:    kValidateErrorPattern,                     //!< String does not match the 'pattern' regular expression.
+        -:  175:
+        -:  176:    kValidateErrorMaxItems,                    //!< Array is longer than the 'maxItems' value.
+        -:  177:    kValidateErrorMinItems,                    //!< Array is shorter than the 'minItems' value.
+        -:  178:    kValidateErrorUniqueItems,                 //!< Array has duplicate items but 'uniqueItems' is true.
+        -:  179:    kValidateErrorAdditionalItems,             //!< Array has additional items that are not allowed by the schema.
+        -:  180:
+        -:  181:    kValidateErrorMaxProperties,               //!< Object has more members than 'maxProperties' value.
+        -:  182:    kValidateErrorMinProperties,               //!< Object has less members than 'minProperties' value.
+        -:  183:    kValidateErrorRequired,                    //!< Object is missing one or more members required by the schema.
+        -:  184:    kValidateErrorAdditionalProperties,        //!< Object has additional members that are not allowed by the schema.
+        -:  185:    kValidateErrorPatternProperties,           //!< See other errors.
+        -:  186:    kValidateErrorDependencies,                //!< Object has missing property or schema dependencies.
+        -:  187:
+        -:  188:    kValidateErrorEnum,                        //!< Property has a value that is not one of its allowed enumerated values
+        -:  189:    kValidateErrorType,                        //!< Property has a type that is not allowed by the schema..
+        -:  190:
+        -:  191:    kValidateErrorOneOf,                       //!< Property did not match any of the sub-schemas specified by 'oneOf'.
+        -:  192:    kValidateErrorOneOfMatch,                  //!< Property matched more than one of the sub-schemas specified by 'oneOf'.
+        -:  193:    kValidateErrorAllOf,                       //!< Property did not match all of the sub-schemas specified by 'allOf'.
+        -:  194:    kValidateErrorAnyOf,                       //!< Property did not match any of the sub-schemas specified by 'anyOf'.
+        -:  195:    kValidateErrorNot                          //!< Property matched the sub-schema specified by 'not'.
+        -:  196:};
+        -:  197:
+        -:  198://! Function pointer type of GetValidateError().
+        -:  199:/*! \ingroup RAPIDJSON_ERRORS
+        -:  200:
+        -:  201:    This is the prototype for \c GetValidateError_X(), where \c X is a locale.
+        -:  202:    User can dynamically change locale in runtime, e.g.:
+        -:  203:\code
+        -:  204:    GetValidateErrorFunc GetValidateError = GetValidateError_En; // or whatever
+        -:  205:    const RAPIDJSON_ERROR_CHARTYPE* s = GetValidateError(validator.GetInvalidSchemaCode());
+        -:  206:\endcode
+        -:  207:*/
+        -:  208:typedef const RAPIDJSON_ERROR_CHARTYPE* (*GetValidateErrorFunc)(ValidateErrorCode);
+        -:  209:
+        -:  210:RAPIDJSON_NAMESPACE_END
+        -:  211:
+        -:  212:#ifdef __clang__
+        -:  213:RAPIDJSON_DIAG_POP
+        -:  214:#endif
+        -:  215:
+        -:  216:#endif // RAPIDJSON_ERROR_ERROR_H_

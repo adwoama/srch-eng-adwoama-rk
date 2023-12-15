@@ -1,0 +1,75 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/internal/strfunc.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2:// 
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed 
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#ifndef RAPIDJSON_INTERNAL_STRFUNC_H_
+        -:   16:#define RAPIDJSON_INTERNAL_STRFUNC_H_
+        -:   17:
+        -:   18:#include "../stream.h"
+        -:   19:#include <cwchar>
+        -:   20:
+        -:   21:RAPIDJSON_NAMESPACE_BEGIN
+        -:   22:namespace internal {
+        -:   23:
+        -:   24://! Custom strlen() which works on different character types.
+        -:   25:/*! \tparam Ch Character type (e.g. char, wchar_t, short)
+        -:   26:    \param s Null-terminated input string.
+        -:   27:    \return Number of characters in the string. 
+        -:   28:    \note This has the same semantics as strlen(), the return value is not number of Unicode codepoints.
+        -:   29:*/
+        -:   30:template <typename Ch>
+        -:   31:inline SizeType StrLen(const Ch* s) {
+        -:   32:    RAPIDJSON_ASSERT(s != 0);
+        -:   33:    const Ch* p = s;
+        -:   34:    while (*p) ++p;
+        -:   35:    return SizeType(p - s);
+        -:   36:}
+        -:   37:
+        -:   38:template <>
+function _ZN9rapidjson8internal6StrLenIcEEjPKT_ called 249 returned 100% blocks executed 100%
+      249:   39:inline SizeType StrLen(const char* s) {
+      249:   40:    return SizeType(std::strlen(s));
+      249:   40-block  0
+        -:   41:}
+        -:   42:
+        -:   43:template <>
+        -:   44:inline SizeType StrLen(const wchar_t* s) {
+        -:   45:    return SizeType(std::wcslen(s));
+        -:   46:}
+        -:   47:
+        -:   48://! Returns number of code points in a encoded string.
+        -:   49:template<typename Encoding>
+        -:   50:bool CountStringCodePoint(const typename Encoding::Ch* s, SizeType length, SizeType* outCount) {
+        -:   51:    RAPIDJSON_ASSERT(s != 0);
+        -:   52:    RAPIDJSON_ASSERT(outCount != 0);
+        -:   53:    GenericStringStream<Encoding> is(s);
+        -:   54:    const typename Encoding::Ch* end = s + length;
+        -:   55:    SizeType count = 0;
+        -:   56:    while (is.src_ < end) {
+        -:   57:        unsigned codepoint;
+        -:   58:        if (!Encoding::Decode(is, &codepoint))
+        -:   59:            return false;
+        -:   60:        count++;
+        -:   61:    }
+        -:   62:    *outCount = count;
+        -:   63:    return true;
+        -:   64:}
+        -:   65:
+        -:   66:} // namespace internal
+        -:   67:RAPIDJSON_NAMESPACE_END
+        -:   68:
+        -:   69:#endif // RAPIDJSON_INTERNAL_STRFUNC_H_

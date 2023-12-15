@@ -1,0 +1,482 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/DSAVLTree.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1://
+        -:    2:// Created by robot on 4/10/2021.
+        -:    3://
+        -:    4:
+        -:    5:#ifndef DSAVLMAP_DSAVLTREE_H
+        -:    6:#define DSAVLMAP_DSAVLTREE_H
+        -:    7:
+        -:    8:#include "DSTreeNode.h"
+        -:    9:
+        -:   10:using namespace std;
+        -:   11:
+        -:   12:template<class K, class V, class R>
+        -:   13:class DSAVLTree {
+        -:   14:private:
+        -:   15:    DSTreeNode<K,V,R> *root = nullptr;
+        -:   16:    int size;
+        -:   17:public:
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iEC2Ev called 1 returned 100% blocks executed 100%
+        1:   18:    DSAVLTree(): root(nullptr), size(0){}
+        -:   19:    DSAVLTree(const DSAVLTree<K,V,R>& rhs){*this = rhs; size = 0;}
+        -:   20:    ~DSAVLTree();
+        -:   21:    //accessors
+        -:   22:    DSTreeNode<K,V,R>* find(K key);
+        -:   23:    inline DSTreeNode<K,V,R>* getRoot(){return root;}
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE8containsES5_ called 0 returned 0% blocks executed 0%
+    #####:   24:    inline bool contains(K val){return contains(root, val);}
+    %%%%%:   24-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:   24-block  1
+call    4 never executed
+    %%%%%:   24-block  2
+    $$$$$:   24-block  3
+call    5 never executed
+        -:   25:    bool contains(DSTreeNode<K,V,R>* c, K val);
+        -:   26:    DSTreeNode<K,V,R>* find(DSTreeNode<K,V,R>* c, K val);
+        -:   27:    int height(DSTreeNode<K,V,R>*&);
+        -:   28:    int getSize();
+        -:   29:
+        -:   30:    //mutators
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE6insertERKS5_S8_RKi called 10603 returned 100% blocks executed 100%
+    10603:   31:    inline void insert(const K& key, const V& val, const R& rank){insert(key, val, rank, root); size++;}
+    10603:   31-block  0
+call    0 returned 10603
+        -:   32:    void insert(const K& key, const V& val, const R& rank, DSTreeNode<K,V, R>*& t);
+        -:   33:    void balance(DSTreeNode<K,V,R>*& t);
+        -:   34:    void rotateWithLeftChild(DSTreeNode<K,V,R>*& k2);
+        -:   35:    void doubleWithLeftChild(DSTreeNode<K,V,R>*& k3);
+        -:   36:    void rotateWithRightChild(DSTreeNode<K,V,R>*& k2);
+        -:   37:    void doubleWithRightChild(DSTreeNode<K,V,R>*& k3);
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE5clearEv called 1 returned 100% blocks executed 100%
+        1:   38:    inline void clear(){clear(root);}
+        1:   38-block  0
+call    0 returned 1
+        -:   39:    void clear(DSTreeNode<K,V,R>* n);
+        -:   40:
+        -:   41:};
+        -:   42:
+        -:   43:#endif //DSAVLMAP_DSAVLTREE_H
+        -:   44:
+        -:   45:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iED2Ev called 4 returned 100% blocks executed 100%
+        4:   46:DSAVLTree<K, V, R>::~DSAVLTree() {
+        -:   47:    //empty tree using post order traversal
+        4:   48:    clear(root);
+        4:   48-block  0
+call    0 returned 4
+        4:   49:}//destructor
+        -:   50:
+        -:   51:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE6insertERKS5_S8_RKiRP10DSTreeNodeIS5_S5_iE called 109296 returned 100% blocks executed 75%
+   109296:   52:void DSAVLTree<K, V, R>::insert(const K& key, const V& val, const R& rank, DSTreeNode<K,V, R>*& t) {
+        -:   53://TODO check with panopto
+   109296:   54:    if(t==nullptr) {
+   109296:   54-block  0
+branch  0 taken 3632 (fallthrough)
+branch  1 taken 105664
+     3632:   55:        t = new DSTreeNode<K, V, R>(key, val, rank, nullptr, nullptr);
+     3632:   55-block  0
+call    0 returned 3632
+call    1 returned 3632
+branch  2 taken 3632 (fallthrough)
+branch  3 taken 0 (throw)
+     3632:   55-block  1
+call    4 returned 3632
+branch  5 taken 3632 (fallthrough)
+branch  6 taken 0 (throw)
+     3632:   55-block  2
+call    7 returned 3632
+branch  8 taken 3632 (fallthrough)
+branch  9 taken 0 (throw)
+     3632:   55-block  3
+call   10 returned 3632
+call   11 returned 3632
+    $$$$$:   55-block  4
+call   12 never executed
+    $$$$$:   55-block  5
+call   13 never executed
+    $$$$$:   55-block  6
+    $$$$$:   55-block  7
+call   14 never executed
+     3632:   56:        if(root == nullptr)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 3632
+    #####:   57:            root = t;
+    %%%%%:   57-block  0
+        -:   58:        else
+     3632:   59:            balance(t);
+     3632:   59-block  0
+call    0 returned 3632
+        -:   60:    }
+   105664:   61:    else if(t->getKey() < key) {
+   105664:   61-block  0
+call    0 returned 105664
+call    1 returned 105664
+branch  2 taken 49511 (fallthrough)
+branch  3 taken 56153
+    49511:   62:        insert(key, val, rank, t->getRight());
+    49511:   62-block  0
+call    0 returned 49511
+call    1 returned 49511
+    49511:   63:        balance(t);
+call    0 returned 49511
+        -:   64:    }
+    56153:   65:    else if(key < t->getKey()) {
+    56153:   65-block  0
+call    0 returned 56153
+call    1 returned 56153
+branch  2 taken 49182 (fallthrough)
+branch  3 taken 6971
+    49182:   66:        insert(key, val, rank, t->getLeft());
+    49182:   66-block  0
+call    0 returned 49182
+call    1 returned 49182
+    49182:   67:        balance(t);
+call    0 returned 49182
+        -:   68:    }
+        -:   69:    else //if(key == t->getKey())//
+     6971:   70:        t->addValue(val,rank);//add this doc id and add to its rank for this word
+     6971:   70-block  0
+call    0 returned 6971
+        -:   71:
+   109296:   72:}//insert
+   109296:   72-block  0
+        -:   73:
+        -:   74:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE7balanceERP10DSTreeNodeIS5_S5_iE called 102325 returned 100% blocks executed 100%
+   102325:   75:void DSAVLTree<K, V, R>::balance(DSTreeNode<K, V, R>*& t) {
+        -:   76://TODO check with panopto
+        -:   77:    //if(t->getLeft() != nullptr && t->getRight() != nullptr) {
+   102325:   78:        if(height(t->getLeft()) - height(t->getRight()) > 1) {//Case 1 or 2
+   102325:   78-block  0
+call    0 returned 102325
+call    1 returned 102325
+call    2 returned 102325
+call    3 returned 102325
+branch  4 taken 939 (fallthrough)
+branch  5 taken 101386
+      939:   79:            if (height(t->getLeft()->getLeft()) >= height(t->getLeft()->getRight()))//Case 1
+      939:   79-block  0
+call    0 returned 939
+call    1 returned 939
+call    2 returned 939
+call    3 returned 939
+call    4 returned 939
+call    5 returned 939
+branch  6 taken 457 (fallthrough)
+branch  7 taken 482
+      457:   80:                rotateWithLeftChild(t);
+      457:   80-block  0
+call    0 returned 457
+        -:   81:            else//Case 2
+      482:   82:                doubleWithLeftChild(t);
+      482:   82-block  0
+call    0 returned 482
+        -:   83:        }
+   101386:   84:        else if (height(t->getRight()) - height(t->getLeft()) > 1) {//Case 3 or 4
+   101386:   84-block  0
+call    0 returned 101386
+call    1 returned 101386
+call    2 returned 101386
+call    3 returned 101386
+branch  4 taken 942 (fallthrough)
+branch  5 taken 100444
+      942:   85:            if (height(t->getRight()->getLeft()) >= height(t->getRight()->getRight()))
+      942:   85-block  0
+call    0 returned 942
+call    1 returned 942
+call    2 returned 942
+call    3 returned 942
+call    4 returned 942
+call    5 returned 942
+branch  6 taken 414 (fallthrough)
+branch  7 taken 528
+      414:   86:                doubleWithRightChild(t);//Case 3?
+      414:   86-block  0
+call    0 returned 414
+        -:   87:            else//Case 4?
+      528:   88:                rotateWithRightChild(t);
+      528:   88-block  0
+call    0 returned 528
+        -:   89:        }
+        -:   90:        //t->getHeight() = max(height(t->getLeft()), height(t->getRight())) + 1;
+   102325:   91:        t->setHeight(max(height(t->getLeft()), height(t->getRight())) + 1);
+   102325:   91-block  0
+call    0 returned 102325
+call    1 returned 102325
+call    2 returned 102325
+call    3 returned 102325
+branch  4 taken 102325 (fallthrough)
+branch  5 taken 0 (throw)
+   102325:   91-block  1
+call    6 returned 102325
+call    7 returned 102325
+        -:   92://    }
+        -:   93:  //  else
+        -:   94:    //    t->setHeight(1);
+   102325:   95:}//balance(DSTreeNode<K, V> *&t)
+        -:   96:
+        -:   97:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE19rotateWithLeftChildERP10DSTreeNodeIS5_S5_iE called 1353 returned 100% blocks executed 100%
+     1353:   98:void DSAVLTree<K, V, R>::rotateWithLeftChild(DSTreeNode<K, V, R>*& k2) {
+        -:   99://TODO check with panopto
+     1353:  100:    DSTreeNode<K,V, R>* k1 = k2->getLeft();
+     1353:  100-block  0
+call    0 returned 1353
+     1353:  101:    k2->setLeft((k1->getRight()));
+call    0 returned 1353
+call    1 returned 1353
+     1353:  102:    k1->setRight(k2);
+call    0 returned 1353
+     1353:  103:    k2->setHeight(max(height(k2->getLeft()), height(k2->getRight())) + 1);
+call    0 returned 1353
+call    1 returned 1353
+call    2 returned 1353
+call    3 returned 1353
+branch  4 taken 1353 (fallthrough)
+branch  5 taken 0 (throw)
+     1353:  103-block  0
+call    6 returned 1353
+call    7 returned 1353
+     1353:  104:    k1->setHeight(max(height(k1->getLeft()), k2->getHeight()) + 1);
+call    0 returned 1353
+call    1 returned 1353
+call    2 returned 1353
+call    3 returned 1353
+call    4 returned 1353
+        -:  105:    //k2->setHeight(max(k2->getLeft()->getHeight(),(k2->getRight()->getHeight()+1)));
+        -:  106:    //k1->setHeight(max(k1->getLeft()->getHeight(), (k2->getHeight()+1)));
+     1353:  107:    k2 = k1;
+     1353:  108:}//rotateWithLeftChild
+        -:  109:
+        -:  110:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE19doubleWithLeftChildERP10DSTreeNodeIS5_S5_iE called 482 returned 100% blocks executed 100%
+      482:  111:void DSAVLTree<K, V, R>::doubleWithLeftChild(DSTreeNode<K, V, R>*& k3) {
+        -:  112://TODO check with panopto
+      482:  113:    rotateWithRightChild(k3->getLeft());
+      482:  113-block  0
+call    0 returned 482
+call    1 returned 482
+      482:  114:    rotateWithLeftChild(k3);
+call    0 returned 482
+      482:  115:}//doubleWithLeftChild
+        -:  116:
+        -:  117:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE20rotateWithRightChildERP10DSTreeNodeIS5_S5_iE called 1424 returned 100% blocks executed 100%
+     1424:  118:void DSAVLTree<K, V, R>::rotateWithRightChild(DSTreeNode<K, V, R>*& k2) {
+        -:  119://TODO check (not on panopto)
+     1424:  120:    DSTreeNode<K,V, R>* k1 = k2->getRight();
+     1424:  120-block  0
+call    0 returned 1424
+     1424:  121:    k2->setRight((k1->getLeft()));
+call    0 returned 1424
+call    1 returned 1424
+     1424:  122:    k1->setLeft(k2);
+call    0 returned 1424
+     1424:  123:    k2->setHeight(max(height(k2->getRight()), height(k2->getLeft())) + 1);
+call    0 returned 1424
+call    1 returned 1424
+call    2 returned 1424
+call    3 returned 1424
+branch  4 taken 1424 (fallthrough)
+branch  5 taken 0 (throw)
+     1424:  123-block  0
+call    6 returned 1424
+call    7 returned 1424
+     1424:  124:    k1->setHeight(max(height(k1->getRight()), k2->getHeight()) + 1);
+call    0 returned 1424
+call    1 returned 1424
+call    2 returned 1424
+call    3 returned 1424
+call    4 returned 1424
+     1424:  125:    k2 = k1;
+     1424:  126:}//rotateWithRightChild
+        -:  127:
+        -:  128:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE20doubleWithRightChildERP10DSTreeNodeIS5_S5_iE called 414 returned 100% blocks executed 100%
+      414:  129:void DSAVLTree<K, V, R>::doubleWithRightChild(DSTreeNode<K, V, R>*& k3) {
+        -:  130://TODO check (not on panopto)
+      414:  131:    rotateWithLeftChild(k3->getRight());
+      414:  131-block  0
+call    0 returned 414
+call    1 returned 414
+      414:  132:    rotateWithRightChild(k3);
+call    0 returned 414
+      414:  133:}//doubleWithRightChild
+        -:  134:
+        -:  135:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE8containsEP10DSTreeNodeIS5_S5_iES5_ called 0 returned 0% blocks executed 0%
+    #####:  136:bool DSAVLTree<K, V, R>::contains(DSTreeNode<K, V, R> *c, K val) {
+    #####:  137:    if(c == nullptr)
+    %%%%%:  137-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  138:        return false;
+    %%%%%:  138-block  0
+    #####:  139:    else if(c->getKey() == val)
+    %%%%%:  139-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  140:        return true;
+    %%%%%:  140-block  0
+    #####:  141:    else if(val < c->getKey())
+    %%%%%:  141-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  142:        contains(c->getLeft(), val);
+    %%%%%:  142-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  142-block  1
+call    5 never executed
+    $$$$$:  142-block  2
+call    6 never executed
+    $$$$$:  142-block  3
+call    7 never executed
+    #####:  143:    else if(c->getKey() < val)
+    %%%%%:  143-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  144:        contains(c->getRight(), val);
+    %%%%%:  144-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  144-block  1
+call    5 never executed
+    $$$$$:  144-block  2
+call    6 never executed
+    #####:  145:}//contains
+    %%%%%:  145-block  0
+        -:  146:
+        -:  147:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE4findES5_ called 0 returned 0% blocks executed 0%
+    #####:  148:DSTreeNode<K, V, R>* DSAVLTree<K, V, R>::find(K key) {
+    #####:  149:    return find(root,key);
+    %%%%%:  149-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  149-block  1
+call    4 never executed
+    %%%%%:  149-block  2
+    $$$$$:  149-block  3
+call    5 never executed
+        -:  150:}
+        -:  151:
+        -:  152://find
+        -:  153:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE4findEP10DSTreeNodeIS5_S5_iES5_ called 0 returned 0% blocks executed 0%
+    #####:  154:DSTreeNode<K,V, R>* DSAVLTree<K, V, R>::find(DSTreeNode<K, V, R> *c, K val) {
+    #####:  155:    if(c == nullptr)
+    %%%%%:  155-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  156:        return nullptr;
+    %%%%%:  156-block  0
+    #####:  157:    else if(c->getKey() == val)
+    %%%%%:  157-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  158:        return c;
+    %%%%%:  158-block  0
+    #####:  159:    else if(val < c->getKey())
+    %%%%%:  159-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  160:        return find(c->getLeft(), val);
+    %%%%%:  160-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  160-block  1
+call    5 never executed
+    $$$$$:  160-block  2
+call    6 never executed
+    $$$$$:  160-block  3
+call    7 never executed
+        -:  161:    else //if(c->getKey() < val)
+    #####:  162:        return find(c->getRight(), val);
+    %%%%%:  162-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  162-block  1
+call    5 never executed
+    $$$$$:  162-block  2
+call    6 never executed
+        -:  163:}
+        -:  164:
+        -:  165:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE5clearEP10DSTreeNodeIS5_S5_iE called 29061 returned 100% blocks executed 100%
+    29061:  166:void DSAVLTree<K, V, R>::clear(DSTreeNode<K,V,R>* n) {
+    29061:  167:    if(n != nullptr){
+    29061:  167-block  0
+branch  0 taken 14528 (fallthrough)
+branch  1 taken 14533
+    14528:  168:        clear(n->getLeft());
+    14528:  168-block  0
+call    0 returned 14528
+call    1 returned 14528
+    14528:  169:        clear(n->getRight());
+call    0 returned 14528
+call    1 returned 14528
+    14528:  170:        delete n;
+branch  0 taken 14528 (fallthrough)
+branch  1 taken 0
+    14528:  170-block  0
+call    2 returned 14528
+call    3 returned 14528
+        -:  171:    }
+    29061:  172:    size = 0;
+    29061:  173:}
+        -:  174:
+        -:  175://TODO: review height function
+        -:  176:template<class K, class V, class R>
+function _ZN9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE6heightERP10DSTreeNodeIS5_S5_iE called 624165 returned 100% blocks executed 100%
+   624165:  177:int DSAVLTree<K, V, R>::height(DSTreeNode<K, V, R>*& node){
+   624165:  178:    if(node == nullptr)
+   624165:  178-block  0
+branch  0 taken 40696 (fallthrough)
+branch  1 taken 583469
+    40696:  179:        return -1;
+    40696:  179-block  0
+   583469:  180:    return node->getHeight();
+   583469:  180-block  0
+call    0 returned 583469
+        -:  181:}
+        -:  182:
+        -:  183://destructor
+        -:  184:template<class K, class V, class R>
+        -:  185:int DSAVLTree<K, V, R>::getSize(){
+        -:  186:    return size;
+        -:  187:}
+        -:  188:
+        -:  189:

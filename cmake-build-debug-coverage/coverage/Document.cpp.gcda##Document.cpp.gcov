@@ -1,0 +1,28 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/Document.cpp
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Document.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Document.cpp.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: * Rebecca Kuhlman
+        -:    3: * 4/6/2021
+        -:    4: * CS 2341
+        -:    5: *  Document class that keeps track of a document and its values
+        -:    6: */
+        -:    7:
+        -:    8:#include "Document.h"
+        -:    9:
+function _ZN8DocumentC2Ev called 0 returned 0% blocks executed 0%
+    #####:   10:Document::Document(){
+    %%%%%:   10-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+        -:   11:
+    #####:   12:}
+        -:   13:
+        -:   14:/*Document::Document(DSHashTable<String, int> index, String author, String date, String id){
+        -:   15:    this->index = index;
+        -:   16:    this->author = author;
+        -:   17:    this->date = date;
+        -:   18:    this->id = id;
+        -:   19:}*/

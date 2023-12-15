@@ -1,0 +1,125 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/DSTreeNode.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/UserInterface.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/UserInterface.cpp.gcda
+        -:    0:Runs:1
+        -:    0:Source is newer than graph
+        -:    1://
+        -:    2:// Created by robot on 4/10/2021.
+        -:    3://
+        -:    4:
+        -:    5:#ifndef DSAVLMAP_DSTREENODE_H
+        -:    6:#define DSAVLMAP_DSTREENODE_H
+        -:    7:
+        -:    8:#include <list>
+        -:    9:#include <set>
+        -:   10:#include <vector>
+        -:   11:#include <iostream>
+        -:   12:
+        -:   13:using namespace std;
+        -:   14:
+        -:   15:template<class K, class V, class R>
+        -:   16:class DSTreeNode {
+        -:   17:private:
+        -:   18:    K key;
+        -:   19:    vector<V> values;
+        -:   20:    vector<R> rankings;
+        -:   21:    DSTreeNode<K,V, R>* left = nullptr;
+        -:   22:    DSTreeNode<K,V, R>* right = nullptr;
+        -:   23:    int height;
+        -:   24:public:
+        -:   25:    //TODO inline constructors if possible
+        -:   26:    DSTreeNode();
+        -:   27:    DSTreeNode(K d,V val, R ranking, DSTreeNode<K,V, R>* l = nullptr, DSTreeNode<K,V,R>* r = nullptr);
+        -:   28:    DSTreeNode(const DSTreeNode & toCopy);
+        -:   29:    ~DSTreeNode();
+        -:   30:    //operators
+        -:   31:    DSTreeNode<K,V,R>& operator = (const DSTreeNode<K,V,R>& val);
+        -:   32:    //accessors
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE6getKeyEv called 0 returned 0% blocks executed 0%
+    #####:   33:    K& getKey(){return key;}
+    %%%%%:   33-block  0
+        -:   34:    vector<V> getValues(){
+        -:   35:        return values;
+        -:   36:    }
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE11getRankingsEv called 0 returned 0% blocks executed 0%
+    #####:   37:    vector<R> getRankings(){return rankings;}
+    %%%%%:   37-block  0
+call    0 never executed
+        -:   38:    inline int& getHeight(){return height;}
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE7getLeftEv called 0 returned 0% blocks executed 0%
+    #####:   39:    inline DSTreeNode*& getLeft(){return left;}
+    %%%%%:   39-block  0
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE8getRightEv called 0 returned 0% blocks executed 0%
+    #####:   40:    inline DSTreeNode*& getRight(){return right;}
+    %%%%%:   40-block  0
+        -:   41:    //mutators
+        -:   42:    inline void setKey(const K& newKey){key = newKey;}
+        -:   43:    void addValue(const V& val, const R& rank);
+        -:   44:    inline void setHeight(const int& h){height = h;}
+        -:   45:    inline void setLeft(DSTreeNode<K,V,R>* node){left = node;}
+        -:   46:    inline void setRight(DSTreeNode<K,V,R>* node){right = node;}
+        -:   47:};
+        -:   48:
+        -:   49:#endif //DSAVLMAP_DSTREENODE_H
+        -:   50:
+        -:   51:template<class K, class V, class R>
+        -:   52:DSTreeNode<K,V,R>::DSTreeNode(){
+        -:   53:    height = -1;
+        -:   54:    left = nullptr;
+        -:   55:    right = nullptr;
+        -:   56:}//default constructor
+        -:   57:template<class K, class V, class R>
+        -:   58:DSTreeNode<K,V,R>::DSTreeNode(K d,V val, R ranked, DSTreeNode<K,V,R>* l, DSTreeNode<K,V,R>* r){
+        -:   59:    key = d;
+        -:   60:    values.push_back(val);
+        -:   61:    rankings.push_back(ranked);
+        -:   62:    left = l;
+        -:   63:    right = r;
+        -:   64:    height = 0;
+        -:   65:}// 3 val constructor
+        -:   66:template<class K, class V, class R>
+        -:   67:DSTreeNode<K,V,R>::DSTreeNode(const DSTreeNode<K,V,R> & toCopy){
+        -:   68:    key = toCopy.key;
+        -:   69:    values= toCopy.values;
+        -:   70:    rankings = toCopy.rankings;
+        -:   71:    left = toCopy.left;
+        -:   72:    right = toCopy.right;
+        -:   73:    height = toCopy.height;
+        -:   74:}//copy constructor
+        -:   75:
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iED2Ev called 0 returned 0% blocks executed 0%
+    #####:   76:template<class K, class V, class R>
+        -:   77:DSTreeNode<K,V,R>::~DSTreeNode(){
+    #####:   78:    if(right != nullptr)
+    %%%%%:   78-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+        -:   79:        delete right;
+        -:   80:    if(left != nullptr)
+        -:   81:        delete left;
+        -:   82:}//destructor
+        -:   83:
+        -:   84:template<class K, class V, class R>
+        -:   85:DSTreeNode<K,V,R> &DSTreeNode<K,V,R>::operator=(const DSTreeNode<K,V,R> &val) {
+        -:   86:    key = val.key;
+        -:   87:    values = val.values;
+        -:   88:    rankings = val.rankings;
+        -:   89:    left = val.left;
+        -:   90:    right = val.right;
+        -:   91:    height = val.height;
+        -:   92:
+        -:   93:    return *this;
+        -:   94:}//operator=
+        -:   95:template<class K, class V, class R>
+        -:   96:void DSTreeNode<K,V,R>::addValue(const V& val, const R& rank){
+        -:   97:    for(int i = 0; i < values.size(); i++){
+        -:   98:        if(values.at(i) == val) {
+        -:   99:            rankings.at(i) += rank;//add to that words rank for this doc ID
+        -:  100:            return;
+        -:  101:        }
+        -:  102:    }
+        -:  103:    values.push_back(val);//if value not already in list, add to list
+        -:  104:    rankings.push_back(rank);
+        -:  105:}
+        -:  106:

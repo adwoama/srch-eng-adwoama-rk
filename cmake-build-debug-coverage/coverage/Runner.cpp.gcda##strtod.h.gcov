@@ -1,0 +1,316 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/internal/strtod.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2:// 
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed 
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#ifndef RAPIDJSON_STRTOD_
+        -:   16:#define RAPIDJSON_STRTOD_
+        -:   17:
+        -:   18:#include "ieee754.h"
+        -:   19:#include "biginteger.h"
+        -:   20:#include "diyfp.h"
+        -:   21:#include "pow10.h"
+        -:   22:#include <climits>
+        -:   23:#include <limits>
+        -:   24:
+        -:   25:RAPIDJSON_NAMESPACE_BEGIN
+        -:   26:namespace internal {
+        -:   27:
+function _ZN9rapidjson8internal8FastPathEdi called 0 returned 0% blocks executed 0%
+    #####:   28:inline double FastPath(double significand, int exp) {
+    #####:   29:    if (exp < -308)
+    %%%%%:   29-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:   30:        return 0.0;
+    %%%%%:   30-block  0
+    #####:   31:    else if (exp >= 0)
+    %%%%%:   31-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:   32:        return significand * internal::Pow10(exp);
+    %%%%%:   32-block  0
+call    0 never executed
+        -:   33:    else
+    #####:   34:        return significand / internal::Pow10(-exp);
+    %%%%%:   34-block  0
+call    0 never executed
+        -:   35:}
+        -:   36:
+function _ZN9rapidjson8internal21StrtodNormalPrecisionEdi called 0 returned 0% blocks executed 0%
+    #####:   37:inline double StrtodNormalPrecision(double d, int p) {
+    #####:   38:    if (p < -308) {
+    %%%%%:   38-block  0
+branch  0 never executed
+branch  1 never executed
+        -:   39:        // Prevent expSum < -308, making Pow10(p) = 0
+    #####:   40:        d = FastPath(d, -308);
+    %%%%%:   40-block  0
+call    0 never executed
+    #####:   41:        d = FastPath(d, p + 308);
+call    0 never executed
+        -:   42:    }
+        -:   43:    else
+    #####:   44:        d = FastPath(d, p);
+    %%%%%:   44-block  0
+call    0 never executed
+    #####:   45:    return d;
+    %%%%%:   45-block  0
+        -:   46:}
+        -:   47:
+        -:   48:template <typename T>
+        -:   49:inline T Min3(T a, T b, T c) {
+        -:   50:    T m = a;
+        -:   51:    if (m > b) m = b;
+        -:   52:    if (m > c) m = c;
+        -:   53:    return m;
+        -:   54:}
+        -:   55:
+        -:   56:inline int CheckWithinHalfULP(double b, const BigInteger& d, int dExp) {
+        -:   57:    const Double db(b);
+        -:   58:    const uint64_t bInt = db.IntegerSignificand();
+        -:   59:    const int bExp = db.IntegerExponent();
+        -:   60:    const int hExp = bExp - 1;
+        -:   61:
+        -:   62:    int dS_Exp2 = 0, dS_Exp5 = 0, bS_Exp2 = 0, bS_Exp5 = 0, hS_Exp2 = 0, hS_Exp5 = 0;
+        -:   63:
+        -:   64:    // Adjust for decimal exponent
+        -:   65:    if (dExp >= 0) {
+        -:   66:        dS_Exp2 += dExp;
+        -:   67:        dS_Exp5 += dExp;
+        -:   68:    }
+        -:   69:    else {
+        -:   70:        bS_Exp2 -= dExp;
+        -:   71:        bS_Exp5 -= dExp;
+        -:   72:        hS_Exp2 -= dExp;
+        -:   73:        hS_Exp5 -= dExp;
+        -:   74:    }
+        -:   75:
+        -:   76:    // Adjust for binary exponent
+        -:   77:    if (bExp >= 0)
+        -:   78:        bS_Exp2 += bExp;
+        -:   79:    else {
+        -:   80:        dS_Exp2 -= bExp;
+        -:   81:        hS_Exp2 -= bExp;
+        -:   82:    }
+        -:   83:
+        -:   84:    // Adjust for half ulp exponent
+        -:   85:    if (hExp >= 0)
+        -:   86:        hS_Exp2 += hExp;
+        -:   87:    else {
+        -:   88:        dS_Exp2 -= hExp;
+        -:   89:        bS_Exp2 -= hExp;
+        -:   90:    }
+        -:   91:
+        -:   92:    // Remove common power of two factor from all three scaled values
+        -:   93:    int common_Exp2 = Min3(dS_Exp2, bS_Exp2, hS_Exp2);
+        -:   94:    dS_Exp2 -= common_Exp2;
+        -:   95:    bS_Exp2 -= common_Exp2;
+        -:   96:    hS_Exp2 -= common_Exp2;
+        -:   97:
+        -:   98:    BigInteger dS = d;
+        -:   99:    dS.MultiplyPow5(static_cast<unsigned>(dS_Exp5)) <<= static_cast<unsigned>(dS_Exp2);
+        -:  100:
+        -:  101:    BigInteger bS(bInt);
+        -:  102:    bS.MultiplyPow5(static_cast<unsigned>(bS_Exp5)) <<= static_cast<unsigned>(bS_Exp2);
+        -:  103:
+        -:  104:    BigInteger hS(1);
+        -:  105:    hS.MultiplyPow5(static_cast<unsigned>(hS_Exp5)) <<= static_cast<unsigned>(hS_Exp2);
+        -:  106:
+        -:  107:    BigInteger delta(0);
+        -:  108:    dS.Difference(bS, &delta);
+        -:  109:
+        -:  110:    return delta.Compare(hS);
+        -:  111:}
+        -:  112:
+        -:  113:inline bool StrtodFast(double d, int p, double* result) {
+        -:  114:    // Use fast path for string-to-double conversion if possible
+        -:  115:    // see http://www.exploringbinary.com/fast-path-decimal-to-floating-point-conversion/
+        -:  116:    if (p > 22  && p < 22 + 16) {
+        -:  117:        // Fast Path Cases In Disguise
+        -:  118:        d *= internal::Pow10(p - 22);
+        -:  119:        p = 22;
+        -:  120:    }
+        -:  121:
+        -:  122:    if (p >= -22 && p <= 22 && d <= 9007199254740991.0) { // 2^53 - 1
+        -:  123:        *result = FastPath(d, p);
+        -:  124:        return true;
+        -:  125:    }
+        -:  126:    else
+        -:  127:        return false;
+        -:  128:}
+        -:  129:
+        -:  130:// Compute an approximation and see if it is within 1/2 ULP
+        -:  131:inline bool StrtodDiyFp(const char* decimals, int dLen, int dExp, double* result) {
+        -:  132:    uint64_t significand = 0;
+        -:  133:    int i = 0;   // 2^64 - 1 = 18446744073709551615, 1844674407370955161 = 0x1999999999999999    
+        -:  134:    for (; i < dLen; i++) {
+        -:  135:        if (significand  >  RAPIDJSON_UINT64_C2(0x19999999, 0x99999999) ||
+        -:  136:            (significand == RAPIDJSON_UINT64_C2(0x19999999, 0x99999999) && decimals[i] > '5'))
+        -:  137:            break;
+        -:  138:        significand = significand * 10u + static_cast<unsigned>(decimals[i] - '0');
+        -:  139:    }
+        -:  140:    
+        -:  141:    if (i < dLen && decimals[i] >= '5') // Rounding
+        -:  142:        significand++;
+        -:  143:
+        -:  144:    int remaining = dLen - i;
+        -:  145:    const int kUlpShift = 3;
+        -:  146:    const int kUlp = 1 << kUlpShift;
+        -:  147:    int64_t error = (remaining == 0) ? 0 : kUlp / 2;
+        -:  148:
+        -:  149:    DiyFp v(significand, 0);
+        -:  150:    v = v.Normalize();
+        -:  151:    error <<= -v.e;
+        -:  152:
+        -:  153:    dExp += remaining;
+        -:  154:
+        -:  155:    int actualExp;
+        -:  156:    DiyFp cachedPower = GetCachedPower10(dExp, &actualExp);
+        -:  157:    if (actualExp != dExp) {
+        -:  158:        static const DiyFp kPow10[] = {
+        -:  159:            DiyFp(RAPIDJSON_UINT64_C2(0xa0000000, 0x00000000), -60),  // 10^1
+        -:  160:            DiyFp(RAPIDJSON_UINT64_C2(0xc8000000, 0x00000000), -57),  // 10^2
+        -:  161:            DiyFp(RAPIDJSON_UINT64_C2(0xfa000000, 0x00000000), -54),  // 10^3
+        -:  162:            DiyFp(RAPIDJSON_UINT64_C2(0x9c400000, 0x00000000), -50),  // 10^4
+        -:  163:            DiyFp(RAPIDJSON_UINT64_C2(0xc3500000, 0x00000000), -47),  // 10^5
+        -:  164:            DiyFp(RAPIDJSON_UINT64_C2(0xf4240000, 0x00000000), -44),  // 10^6
+        -:  165:            DiyFp(RAPIDJSON_UINT64_C2(0x98968000, 0x00000000), -40)   // 10^7
+        -:  166:        };
+        -:  167:        int adjustment = dExp - actualExp;
+        -:  168:        RAPIDJSON_ASSERT(adjustment >= 1 && adjustment < 8);
+        -:  169:        v = v * kPow10[adjustment - 1];
+        -:  170:        if (dLen + adjustment > 19) // has more digits than decimal digits in 64-bit
+        -:  171:            error += kUlp / 2;
+        -:  172:    }
+        -:  173:
+        -:  174:    v = v * cachedPower;
+        -:  175:
+        -:  176:    error += kUlp + (error == 0 ? 0 : 1);
+        -:  177:
+        -:  178:    const int oldExp = v.e;
+        -:  179:    v = v.Normalize();
+        -:  180:    error <<= oldExp - v.e;
+        -:  181:
+        -:  182:    const int effectiveSignificandSize = Double::EffectiveSignificandSize(64 + v.e);
+        -:  183:    int precisionSize = 64 - effectiveSignificandSize;
+        -:  184:    if (precisionSize + kUlpShift >= 64) {
+        -:  185:        int scaleExp = (precisionSize + kUlpShift) - 63;
+        -:  186:        v.f >>= scaleExp;
+        -:  187:        v.e += scaleExp; 
+        -:  188:        error = (error >> scaleExp) + 1 + kUlp;
+        -:  189:        precisionSize -= scaleExp;
+        -:  190:    }
+        -:  191:
+        -:  192:    DiyFp rounded(v.f >> precisionSize, v.e + precisionSize);
+        -:  193:    const uint64_t precisionBits = (v.f & ((uint64_t(1) << precisionSize) - 1)) * kUlp;
+        -:  194:    const uint64_t halfWay = (uint64_t(1) << (precisionSize - 1)) * kUlp;
+        -:  195:    if (precisionBits >= halfWay + static_cast<unsigned>(error)) {
+        -:  196:        rounded.f++;
+        -:  197:        if (rounded.f & (DiyFp::kDpHiddenBit << 1)) { // rounding overflows mantissa (issue #340)
+        -:  198:            rounded.f >>= 1;
+        -:  199:            rounded.e++;
+        -:  200:        }
+        -:  201:    }
+        -:  202:
+        -:  203:    *result = rounded.ToDouble();
+        -:  204:
+        -:  205:    return halfWay - static_cast<unsigned>(error) >= precisionBits || precisionBits >= halfWay + static_cast<unsigned>(error);
+        -:  206:}
+        -:  207:
+        -:  208:inline double StrtodBigInteger(double approx, const char* decimals, int dLen, int dExp) {
+        -:  209:    RAPIDJSON_ASSERT(dLen >= 0);
+        -:  210:    const BigInteger dInt(decimals, static_cast<unsigned>(dLen));
+        -:  211:    Double a(approx);
+        -:  212:    int cmp = CheckWithinHalfULP(a.Value(), dInt, dExp);
+        -:  213:    if (cmp < 0)
+        -:  214:        return a.Value();  // within half ULP
+        -:  215:    else if (cmp == 0) {
+        -:  216:        // Round towards even
+        -:  217:        if (a.Significand() & 1)
+        -:  218:            return a.NextPositiveDouble();
+        -:  219:        else
+        -:  220:            return a.Value();
+        -:  221:    }
+        -:  222:    else // adjustment
+        -:  223:        return a.NextPositiveDouble();
+        -:  224:}
+        -:  225:
+        -:  226:inline double StrtodFullPrecision(double d, int p, const char* decimals, size_t length, size_t decimalPosition, int exp) {
+        -:  227:    RAPIDJSON_ASSERT(d >= 0.0);
+        -:  228:    RAPIDJSON_ASSERT(length >= 1);
+        -:  229:
+        -:  230:    double result = 0.0;
+        -:  231:    if (StrtodFast(d, p, &result))
+        -:  232:        return result;
+        -:  233:
+        -:  234:    RAPIDJSON_ASSERT(length <= INT_MAX);
+        -:  235:    int dLen = static_cast<int>(length);
+        -:  236:
+        -:  237:    RAPIDJSON_ASSERT(length >= decimalPosition);
+        -:  238:    RAPIDJSON_ASSERT(length - decimalPosition <= INT_MAX);
+        -:  239:    int dExpAdjust = static_cast<int>(length - decimalPosition);
+        -:  240:
+        -:  241:    RAPIDJSON_ASSERT(exp >= INT_MIN + dExpAdjust);
+        -:  242:    int dExp = exp - dExpAdjust;
+        -:  243:
+        -:  244:    // Make sure length+dExp does not overflow
+        -:  245:    RAPIDJSON_ASSERT(dExp <= INT_MAX - dLen);
+        -:  246:
+        -:  247:    // Trim leading zeros
+        -:  248:    while (dLen > 0 && *decimals == '0') {
+        -:  249:        dLen--;
+        -:  250:        decimals++;
+        -:  251:    }
+        -:  252:
+        -:  253:    // Trim trailing zeros
+        -:  254:    while (dLen > 0 && decimals[dLen - 1] == '0') {
+        -:  255:        dLen--;
+        -:  256:        dExp++;
+        -:  257:    }
+        -:  258:
+        -:  259:    if (dLen == 0) { // Buffer only contains zeros.
+        -:  260:        return 0.0;
+        -:  261:    }
+        -:  262:
+        -:  263:    // Trim right-most digits
+        -:  264:    const int kMaxDecimalDigit = 767 + 1;
+        -:  265:    if (dLen > kMaxDecimalDigit) {
+        -:  266:        dExp += dLen - kMaxDecimalDigit;
+        -:  267:        dLen = kMaxDecimalDigit;
+        -:  268:    }
+        -:  269:
+        -:  270:    // If too small, underflow to zero.
+        -:  271:    // Any x <= 10^-324 is interpreted as zero.
+        -:  272:    if (dLen + dExp <= -324)
+        -:  273:        return 0.0;
+        -:  274:
+        -:  275:    // If too large, overflow to infinity.
+        -:  276:    // Any x >= 10^309 is interpreted as +infinity.
+        -:  277:    if (dLen + dExp > 309)
+        -:  278:        return std::numeric_limits<double>::infinity();
+        -:  279:
+        -:  280:    if (StrtodDiyFp(decimals, dLen, dExp, &result))
+        -:  281:        return result;
+        -:  282:
+        -:  283:    // Use approximation from StrtodDiyFp and make adjustment with BigInteger comparison
+        -:  284:    return StrtodBigInteger(result, decimals, dLen, dExp);
+        -:  285:}
+        -:  286:
+        -:  287:} // namespace internal
+        -:  288:RAPIDJSON_NAMESPACE_END
+        -:  289:
+        -:  290:#endif // RAPIDJSON_STRTOD_

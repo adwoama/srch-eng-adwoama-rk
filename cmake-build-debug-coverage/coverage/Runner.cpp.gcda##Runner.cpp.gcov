@@ -1,0 +1,2278 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/Runner.cpp
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1://
+        -:    2:// Created by robot on 4/13/2021.
+        -:    3://
+        -:    4:#include "include/rapidjson/document.h"
+        -:    5:#include <dirent.h>
+        -:    6:#include <string>
+        -:    7:#include <iostream>
+        -:    8:#include <sstream>
+        -:    9:#include <locale.h>
+        -:   10:#include <fstream>
+        -:   11:#include "Runner.h"
+        -:   12:#include <set>
+        -:   13:#include <list>
+        -:   14:#include <vector>
+        -:   15:#include "porter2_stemmer.h"
+        -:   16:#include <stdexcept>
+        -:   17:
+        -:   18:using namespace std;
+        -:   19:using namespace rapidjson;
+        -:   20:
+        -:   21:#define DEBUG true
+        -:   22:#define DEBUG2 false
+        -:   23:
+        -:   24:/**
+        -:   25: * Creates a running object by intializing needed varibles and
+        -:   26: * reading in stopWords.txt
+        -:   27: */
+function _ZN6RunnerC2Ev called 1 returned 100% blocks executed 51%
+      642:   28:Runner::Runner(){
+        1:   28-block  0
+call    0 returned 1
+call    1 returned 1
+branch  2 taken 1 (fallthrough)
+branch  3 taken 0 (throw)
+        1:   28-block  1
+      642:   28-block  2
+branch  4 taken 641 (fallthrough)
+branch  5 taken 1
+      641:   28-block  3
+call    6 returned 641
+        1:   28-block  4
+call    7 returned 1
+    $$$$$:   28-block  5
+call    8 never executed
+    $$$$$:   28-block  6
+branch  9 never executed
+branch 10 never executed
+    $$$$$:   28-block  7
+    $$$$$:   28-block  8
+branch 11 never executed
+branch 12 never executed
+    $$$$$:   28-block  9
+call   13 never executed
+    $$$$$:   28-block 10
+call   14 never executed
+    $$$$$:   28-block 11
+call   15 never executed
+        2:   29:    fstream inputStop;
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+call    3 returned 1
+    $$$$$:   29-block  0
+call    4 never executed
+        2:   30:    string stopFile = "stopWords.txt";
+        1:   30-block  0
+call    0 returned 1
+call    1 returned 1
+branch  2 taken 1 (fallthrough)
+branch  3 taken 0 (throw)
+call    4 returned 1
+    $$$$$:   30-block  1
+    $$$$$:   30-block  2
+call    5 never executed
+        1:   31:    inputStop.open(stopFile);
+call    0 returned 1
+call    1 returned 1
+branch  2 taken 1 (fallthrough)
+branch  3 taken 0 (throw)
+        1:   32:    if(!inputStop.is_open())
+        1:   32-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   32-block  1
+branch  3 taken 0 (fallthrough)
+branch  4 taken 1
+    #####:   33:        throw invalid_argument("File not found for stop words!");
+    %%%%%:   33-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:   33-block  1
+call    4 never executed
+    $$$$$:   33-block  2
+call    5 never executed
+        1:   34:    int index = 0;
+        1:   35:    string newStop;
+        1:   35-block  0
+call    0 returned 1
+    $$$$$:   35-block  1
+call    1 never executed
+      641:   36:    while (!inputStop.eof()){ //&& (newStop != " " && newStop != "")){
+      641:   36-block  0
+call    0 returned 641
+branch  1 taken 641 (fallthrough)
+branch  2 taken 0 (throw)
+      641:   36-block  1
+branch  3 taken 640 (fallthrough)
+branch  4 taken 1
+      640:   37:        inputStop >> newStop;
+      640:   37-block  0
+call    0 returned 640
+branch  1 taken 640 (fallthrough)
+branch  2 taken 0 (throw)
+      640:   38:        stopWords[index] = newStop;
+      640:   38-block  0
+call    0 returned 640
+branch  1 taken 640 (fallthrough)
+branch  2 taken 0 (throw)
+      640:   39:        index++;
+      640:   39-block  0
+        -:   40:    }
+        -:   41:   /* sort(stopWords, stopWords + 641);
+        -:   42:    ofstream output;
+        -:   43:    output.open("newStops.txt");
+        -:   44:    for(int i = 0; i < 641; i++){
+        -:   45:        output << stopWords[i] << endl;
+        -:   46:    }*/
+        1:   47:    numDocuments = 0;
+        1:   48:    avgWordCount = 0;
+        1:   48-block  0
+call    0 returned 1
+        1:   49:}
+        -:   50:
+        -:   51:/**
+        -:   52: * Creates keywords and authors by reading in the documents
+        -:   53: * @param folder path to documents to read in
+        -:   54: */
+function _ZN6Runner11MakeDocListERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 1 returned 100% blocks executed 71%
+        1:   55:void Runner::MakeDocList(string & folder){
+        1:   56:    filePath = folder;
+        1:   56-block  0
+call    0 returned 1
+        1:   57:    int numWords = 0;
+        -:   58:
+        -:   59:    if(DEBUG2) cout << "Building Directory from: " << folder.c_str() << endl;
+        -:   60:    //METHOD 1
+        -:   61:    struct dirent *entry;
+        1:   62:    DIR *dir = opendir(folder.c_str());
+        1:   62-block  0
+call    0 returned 1
+call    1 returned 1
+        1:   63:    if (dir == NULL) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+        -:   64:        if(DEBUG2)  cout << "NULL directory" << endl;
+    #####:   65:        return;
+    %%%%%:   65-block  0
+        -:   66:    }
+        8:   67:    while ((entry = readdir(dir)) != NULL) {//loops through each directory
+        8:   67-block  0
+call    0 returned 8
+branch  1 taken 7 (fallthrough)
+branch  2 taken 1
+        -:   68:        if(DEBUG2)   cout << " Entry: " ;
+       14:   69:        string file = entry->d_name;//file name put into string
+        7:   69-block  0
+call    0 returned 7
+call    1 returned 7
+branch  2 taken 7 (fallthrough)
+branch  3 taken 0 (throw)
+        7:   69-block  1
+call    4 returned 7
+    $$$$$:   69-block  2
+    $$$$$:   69-block  3
+call    5 never executed
+        7:   70:        int length = file.length();
+call    0 returned 7
+        -:   71:        if(DEBUG2)   cout << file << " ";
+        -:   72:        if(DEBUG2)    cout << entry->d_name << endl;
+        7:   73:        if(length>6){
+        7:   73-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 2
+        -:   74:
+        -:   75:            if(DEBUG2)  cout << file.substr((length-4));
+       10:   76:            string type = file.substr((length-4));//last 4 digits of file name(ex "json")
+        5:   76-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:   76-block  1
+call    3 returned 5
+    $$$$$:   76-block  2
+call    4 never executed
+        5:   77:            if(type.compare("json") == 0){
+        5:   77-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0
+        -:   78:                if(DEBUG2)  cout << " is a json";
+        -:   79:                // READ data from json file
+        5:   80:                numDocuments++;//increase count of documents for TF IDF score
+       10:   81:                rapidjson::Document doc;
+        5:   81-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+call    3 returned 5
+    $$$$$:   81-block  1
+call    4 never executed
+       15:   82:                ifstream  streamy((folder+"/"+file).c_str());
+        5:   82-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:   82-block  1
+call    3 returned 5
+branch  4 taken 5 (fallthrough)
+branch  5 taken 0 (throw)
+        5:   82-block  2
+call    6 returned 5
+call    7 returned 5
+branch  8 taken 5 (fallthrough)
+branch  9 taken 0 (throw)
+call   10 returned 5
+call   11 returned 5
+    $$$$$:   82-block  3
+    $$$$$:   82-block  4
+    $$$$$:   82-block  5
+call   12 never executed
+        -:   83:                //put the whole file's data into a string:
+       10:   84:                string wholeFile;
+call    0 returned 5
+call    1 returned 5
+    $$$$$:   84-block  0
+call    2 never executed
+       10:   85:                string temp;
+call    0 returned 5
+call    1 returned 5
+    $$$$$:   85-block  0
+call    2 never executed
+    11527:   86:                while(getline(streamy,temp)){wholeFile+=temp;}
+    11527:   86-block  0
+call    0 returned 11527
+branch  1 taken 11527 (fallthrough)
+branch  2 taken 0 (throw)
+    11527:   86-block  1
+call    3 returned 11527
+branch  4 taken 11527 (fallthrough)
+branch  5 taken 0 (throw)
+    11527:   86-block  2
+branch  6 taken 11522 (fallthrough)
+branch  7 taken 5
+    11522:   86-block  3
+call    8 returned 11522
+branch  9 taken 11522 (fallthrough)
+branch 10 taken 0 (throw)
+    11522:   86-block  4
+        5:   87:                streamy.close();
+        5:   87-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        -:   88:
+        5:   89:                doc.Parse(wholeFile.c_str());
+        5:   89-block  0
+call    0 returned 5
+call    1 returned 5
+branch  2 taken 5 (fallthrough)
+branch  3 taken 0 (throw)
+        -:   90:               // if(doc.IsObject()) cout << "Is an object!" << endl << endl;//check that parsing worked
+        -:   91:
+        5:   92:                doc["paper_id"].IsObject();
+        5:   92-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:   92-block  1
+call    3 returned 5
+       15:   93:                string paper_id = doc["paper_id"].GetString();//read paper_id
+call    0 returned 5
+call    1 returned 5
+branch  2 taken 5 (fallthrough)
+branch  3 taken 0 (throw)
+        5:   93-block  0
+call    4 returned 5
+branch  5 taken 5 (fallthrough)
+branch  6 taken 0 (throw)
+        5:   93-block  1
+call    7 returned 5
+branch  8 taken 5 (fallthrough)
+branch  9 taken 0 (throw)
+call   10 returned 5
+    $$$$$:   93-block  2
+    $$$$$:   93-block  3
+call   11 never executed
+        -:   94:                if(DEBUG2)   cout << "Paper id: " << paper_id << endl;
+        -:   95:             //Read Authors
+        5:   96:                doc["metadata"]["authors"].IsObject();
+        5:   96-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:   96-block  1
+call    3 returned 5
+branch  4 taken 5 (fallthrough)
+branch  5 taken 0 (throw)
+        5:   96-block  2
+call    6 returned 5
+        5:   97:                doc["metadata"]["authors"].IsArray();
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:   97-block  0
+call    3 returned 5
+branch  4 taken 5 (fallthrough)
+branch  5 taken 0 (throw)
+        5:   97-block  1
+call    6 returned 5
+       60:   98:                for(auto &v : doc["metadata"]["authors"].GetArray()){
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:   98-block  0
+call    3 returned 5
+branch  4 taken 5 (fallthrough)
+branch  5 taken 0 (throw)
+        5:   98-block  1
+call    6 returned 5
+branch  7 taken 5 (fallthrough)
+branch  8 taken 0 (throw)
+        5:   98-block  2
+call    9 returned 5
+branch 10 taken 5 (fallthrough)
+branch 11 taken 0 (throw)
+        5:   98-block  3
+call   12 returned 5
+branch 13 taken 5 (fallthrough)
+branch 14 taken 0 (throw)
+        5:   98-block  4
+       60:   98-block  5
+branch 15 taken 55 (fallthrough)
+branch 16 taken 5
+       55:   98-block  6
+        5:   98-block  7
+call   17 returned 5
+    $$$$$:   98-block  8
+call   18 never executed
+       55:   99:                    temp = v["last"].GetString();//hold authors last name in temp
+       55:   99-block  0
+call    0 returned 55
+branch  1 taken 55 (fallthrough)
+branch  2 taken 0 (throw)
+       55:   99-block  1
+call    3 returned 55
+branch  4 taken 55 (fallthrough)
+branch  5 taken 0 (throw)
+       55:   99-block  2
+call    6 returned 55
+branch  7 taken 55 (fallthrough)
+branch  8 taken 0 (throw)
+       55:  100:                    authors.insert(temp, paper_id);//TODO HASH TABLE fix insert authors into
+       55:  100-block  0
+call    0 returned 55
+branch  1 taken 55 (fallthrough)
+branch  2 taken 0 (throw)
+       55:  101:                    if(DEBUG) cout << authors.contains(temp) << endl;
+       55:  101-block  0
+call    0 returned 55
+call    1 returned 55
+branch  2 taken 55 (fallthrough)
+branch  3 taken 0 (throw)
+       55:  101-block  1
+call    4 returned 55
+branch  5 taken 55 (fallthrough)
+branch  6 taken 0 (throw)
+        -:  102:                }
+        -:  103:             //Read Abstract
+        5:  104:                doc["abstract"].IsObject();
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:  104-block  0
+call    3 returned 5
+        5:  105:                doc["abstract"].IsArray();
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:  105-block  0
+call    3 returned 5
+       12:  106:                for(auto &v : doc["abstract"].GetArray()){
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:  106-block  0
+call    3 returned 5
+branch  4 taken 5 (fallthrough)
+branch  5 taken 0 (throw)
+        5:  106-block  1
+call    6 returned 5
+branch  7 taken 5 (fallthrough)
+branch  8 taken 0 (throw)
+        5:  106-block  2
+call    9 returned 5
+branch 10 taken 5 (fallthrough)
+branch 11 taken 0 (throw)
+        5:  106-block  3
+       12:  106-block  4
+branch 12 taken 7 (fallthrough)
+branch 13 taken 5
+        5:  106-block  5
+call   14 returned 5
+    $$$$$:  106-block  6
+call   15 never executed
+        7:  107:                    if(DEBUG) cout << v["text"].GetString() << endl;
+        7:  107-block  0
+call    0 returned 7
+branch  1 taken 7 (fallthrough)
+branch  2 taken 0 (throw)
+        7:  107-block  1
+call    3 returned 7
+branch  4 taken 7 (fallthrough)
+branch  5 taken 0 (throw)
+        7:  107-block  2
+call    6 returned 7
+branch  7 taken 7 (fallthrough)
+branch  8 taken 0 (throw)
+        7:  107-block  3
+call    9 returned 7
+branch 10 taken 7 (fallthrough)
+branch 11 taken 0 (throw)
+       21:  108:                    istringstream inSS(v["text"].GetString());
+        7:  108-block  0
+call    0 returned 7
+call    1 returned 7
+branch  2 taken 7 (fallthrough)
+branch  3 taken 0 (throw)
+        7:  108-block  1
+call    4 returned 7
+branch  5 taken 7 (fallthrough)
+branch  6 taken 0 (throw)
+        7:  108-block  2
+call    7 returned 7
+branch  8 taken 7 (fallthrough)
+branch  9 taken 0 (throw)
+        7:  108-block  3
+call   10 returned 7
+branch 11 taken 7 (fallthrough)
+branch 12 taken 0 (throw)
+call   13 returned 7
+        7:  108-block  4
+call   14 returned 7
+    $$$$$:  108-block  5
+    $$$$$:  108-block  6
+    $$$$$:  108-block  7
+call   15 never executed
+        7:  109:                    inSS >> temp;
+call    0 returned 7
+branch  1 taken 7 (fallthrough)
+branch  2 taken 0 (throw)
+        7:  110:                    if(removeStops(temp)){
+        7:  110-block  0
+call    0 returned 7
+branch  1 taken 7 (fallthrough)
+branch  2 taken 0 (throw)
+        7:  110-block  1
+branch  3 taken 7 (fallthrough)
+branch  4 taken 0
+        7:  111:                        numWords++;
+        7:  112:                        stemming(temp);
+        7:  112-block  0
+call    0 returned 7
+branch  1 taken 7 (fallthrough)
+branch  2 taken 0 (throw)
+        -:  113:                        if(DEBUG2)cout << temp << endl;
+        7:  114:                        keywords.insert(temp, paper_id, 10);
+        7:  114-block  0
+call    0 returned 7
+branch  1 taken 7 (fallthrough)
+branch  2 taken 0 (throw)
+        7:  114-block  1
+    $$$$$:  114-block  2
+        -:  115:                    }
+      720:  116:                    while(!inSS.eof()) {//parses file word by word via string stream
+      720:  116-block  0
+call    0 returned 720
+branch  1 taken 720 (fallthrough)
+branch  2 taken 0 (throw)
+      720:  116-block  1
+branch  3 taken 713 (fallthrough)
+branch  4 taken 7
+      713:  116-block  2
+      713:  117:                        inSS >> temp;
+      713:  117-block  0
+call    0 returned 713
+branch  1 taken 713 (fallthrough)
+branch  2 taken 0 (throw)
+      713:  118:                        if(removeStops(temp)){
+      713:  118-block  0
+call    0 returned 713
+branch  1 taken 713 (fallthrough)
+branch  2 taken 0 (throw)
+      713:  118-block  1
+branch  3 taken 448 (fallthrough)
+branch  4 taken 265
+      448:  119:                            numWords++;
+      448:  120:                            stemming(temp);
+      448:  120-block  0
+call    0 returned 448
+branch  1 taken 448 (fallthrough)
+branch  2 taken 0 (throw)
+        -:  121:                            if(DEBUG2)cout << temp << endl;
+      448:  122:                            keywords.insert(temp, paper_id, 10);
+      448:  122-block  0
+call    0 returned 448
+branch  1 taken 448 (fallthrough)
+branch  2 taken 0 (throw)
+      448:  122-block  1
+    $$$$$:  122-block  2
+        -:  123:                        }
+        -:  124:                    }
+        -:  125:                }//for every sentence of abstract
+        -:  126:             //Read Body Text
+        5:  127:                doc["body_text"].IsObject();
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:  127-block  0
+call    3 returned 5
+        -:  128:              //  if(doc["body_text"].IsArray()) cout << "body is an array" << endl << endl;
+        -:  129:
+      120:  130:                for(auto &v : doc["body_text"].GetArray()) {
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0 (throw)
+        5:  130-block  0
+call    3 returned 5
+branch  4 taken 5 (fallthrough)
+branch  5 taken 0 (throw)
+        5:  130-block  1
+call    6 returned 5
+branch  7 taken 5 (fallthrough)
+branch  8 taken 0 (throw)
+        5:  130-block  2
+call    9 returned 5
+branch 10 taken 5 (fallthrough)
+branch 11 taken 0 (throw)
+        5:  130-block  3
+      120:  130-block  4
+branch 12 taken 115 (fallthrough)
+branch 13 taken 5
+      115:  130-block  5
+        5:  130-block  6
+call   14 returned 5
+    $$$$$:  130-block  7
+call   15 never executed
+        -:  131:                    if(DEBUG2) cout << v["text"].GetString() << endl;//print json body text
+      345:  132:                    istringstream inSS(v["text"].GetString());
+      115:  132-block  0
+call    0 returned 115
+call    1 returned 115
+branch  2 taken 115 (fallthrough)
+branch  3 taken 0 (throw)
+      115:  132-block  1
+call    4 returned 115
+branch  5 taken 115 (fallthrough)
+branch  6 taken 0 (throw)
+      115:  132-block  2
+call    7 returned 115
+branch  8 taken 115 (fallthrough)
+branch  9 taken 0 (throw)
+      115:  132-block  3
+call   10 returned 115
+branch 11 taken 115 (fallthrough)
+branch 12 taken 0 (throw)
+call   13 returned 115
+      115:  132-block  4
+call   14 returned 115
+    $$$$$:  132-block  5
+    $$$$$:  132-block  6
+    $$$$$:  132-block  7
+call   15 never executed
+      115:  133:                    inSS >> temp;
+call    0 returned 115
+branch  1 taken 115 (fallthrough)
+branch  2 taken 0 (throw)
+      115:  134:                    if(removeStops(temp)){
+      115:  134-block  0
+call    0 returned 115
+branch  1 taken 115 (fallthrough)
+branch  2 taken 0 (throw)
+      115:  134-block  1
+branch  3 taken 47 (fallthrough)
+branch  4 taken 68
+       47:  135:                        numWords++;
+       47:  136:                        stemming(temp);
+       47:  136-block  0
+call    0 returned 47
+branch  1 taken 47 (fallthrough)
+branch  2 taken 0 (throw)
+        -:  137:                        if(DEBUG2)cout << temp << endl;
+       47:  138:                        keywords.insert(temp, paper_id, 1);
+       47:  138-block  0
+call    0 returned 47
+branch  1 taken 47 (fallthrough)
+branch  2 taken 0 (throw)
+       47:  138-block  1
+    $$$$$:  138-block  2
+        -:  139:                    }
+    16368:  140:                    while(!inSS.eof()) {//parses file word by word via string stream
+    16368:  140-block  0
+call    0 returned 16368
+branch  1 taken 16368 (fallthrough)
+branch  2 taken 0 (throw)
+    16368:  140-block  1
+branch  3 taken 16253 (fallthrough)
+branch  4 taken 115
+    16253:  140-block  2
+    16253:  141:                        inSS >> temp;
+    16253:  141-block  0
+call    0 returned 16253
+branch  1 taken 16253 (fallthrough)
+branch  2 taken 0 (throw)
+    16253:  142:                        if(removeStops(temp)){
+    16253:  142-block  0
+call    0 returned 16253
+branch  1 taken 16253 (fallthrough)
+branch  2 taken 0 (throw)
+    16253:  142-block  1
+branch  3 taken 10101 (fallthrough)
+branch  4 taken 6152
+    10101:  143:                            numWords++;
+    10101:  144:                            stemming(temp);
+    10101:  144-block  0
+call    0 returned 10101
+branch  1 taken 10101 (fallthrough)
+branch  2 taken 0 (throw)
+        -:  145:                            if(DEBUG2)cout << temp << endl;
+    10101:  146:                            keywords.insert(temp, paper_id, 1);
+    10101:  146-block  0
+call    0 returned 10101
+branch  1 taken 10101 (fallthrough)
+branch  2 taken 0 (throw)
+    10101:  146-block  1
+    $$$$$:  146-block  2
+        -:  147:                        }
+        -:  148:                    }
+        -:  149:                }
+        -:  150:
+        -:  151:            }//if file is type .json
+        -:  152:        }//if file name is long enough
+        -:  153:    }
+        1:  154:    closedir(dir);
+        1:  154-block  0
+call    0 returned 1
+        1:  155:    avgWordCount = numWords*(1.0)/numDocuments;
+        -:  156:}
+        -:  157:
+function _ZN6Runner6SearchERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 0 returned 0% blocks executed 0%
+    #####:  158:vector<string> Runner::Search(string & word){
+    #####:  159:    DSTreeNode<string,string, int>* node = keywords.find(word);
+    %%%%%:  159-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  159-block  1
+call    4 never executed
+    $$$$$:  159-block  2
+call    5 never executed
+    $$$$$:  159-block  3
+call    6 never executed
+    #####:  160:    if(node == nullptr)
+branch  0 never executed
+branch  1 never executed
+    #####:  161:        throw std::out_of_range("Enter valid word");
+    %%%%%:  161-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  161-block  1
+call    4 never executed
+    $$$$$:  161-block  2
+call    5 never executed
+    #####:  162:    return node->getValues();
+    %%%%%:  162-block  0
+call    0 never executed
+        -:  163:}
+        -:  164:
+function _ZN6Runner6OutputERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERSt6vectorIS5_SaIS5_EE called 0 returned 0% blocks executed 0%
+    #####:  165:void Runner::Output(string& word, vector<string>& docIds){
+    #####:  166:    cout << word << endl;
+    %%%%%:  166-block  0
+call    0 never executed
+call    1 never executed
+    #####:  167:    for(auto& item : docIds){
+call    0 never executed
+call    1 never executed
+    %%%%%:  167-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  167-block  1
+call    5 never executed
+    %%%%%:  167-block  2
+call    6 never executed
+    #####:  168:        cout << item << endl;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  168-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:  169:        //TODO print beginning of document
+        -:  170:    }
+        -:  171:    /*
+        -:  172:    std::set<std::string>::iterator iter = docIds.begin();
+        -:  173:    while(iter != docIds.end()){
+        -:  174:        cout << (*iter) << endl;
+        -:  175:        iter++;
+        -:  176:    }//loop through set
+        -:  177:    */
+    #####:  178:}
+    %%%%%:  178-block  0
+        -:  179:
+        -:  180:/**
+        -:  181: * Given a query, gets the information from keywords and authors to call output with
+        -:  182: * @param str Query that was read in
+        -:  183: */
+function _ZN6Runner8getInputERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 0 returned 0% blocks executed 0%
+    #####:  184:void Runner::getInput(string& str){
+    #####:  185:    vector<string> andWords;
+    %%%%%:  185-block  0
+call    0 never executed
+    $$$$$:  185-block  1
+call    1 never executed
+    #####:  186:    vector<string> orWords;
+call    0 never executed
+    $$$$$:  186-block  0
+call    1 never executed
+    #####:  187:    vector<string> notWords;
+call    0 never executed
+    $$$$$:  187-block  0
+call    1 never executed
+    #####:  188:    string author = "";
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    $$$$$:  188-block  0
+    $$$$$:  188-block  1
+call    4 never executed
+    #####:  189:    bool ifAnd = false;
+    #####:  190:    int find = 0;
+    #####:  191:    int length = str.length();
+call    0 never executed
+    #####:  192:    string check;
+call    0 never executed
+    $$$$$:  192-block  0
+call    1 never executed
+    #####:  193:    for(int index = 0; index < length; index++){
+    %%%%%:  193-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  194:        find = str.find(' ', index);
+    %%%%%:  194-block  0
+call    0 never executed
+    #####:  195:        if(find == -1){
+branch  0 never executed
+branch  1 never executed
+    #####:  196:            find = length;
+    %%%%%:  196-block  0
+        -:  197:        }
+    #####:  198:        check = str.substr(index, find - index);
+    %%%%%:  198-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  198-block  1
+call    3 never executed
+call    4 never executed
+    #####:  199:        if(check == "AND"){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  200:            ifAnd = true;
+    %%%%%:  200-block  0
+        -:  201:        }
+    #####:  202:        else if(check == "OR"){
+    %%%%%:  202-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  203:            ifAnd = false;
+    %%%%%:  203-block  0
+        -:  204:        }
+    #####:  205:        else if(check == "NOT"){
+    %%%%%:  205-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  206:            int find2 = str.find(' ', find + 1);
+    %%%%%:  206-block  0
+call    0 never executed
+    #####:  207:            if(find2 == -1){
+branch  0 never executed
+branch  1 never executed
+    #####:  208:                find2 = length;
+    %%%%%:  208-block  0
+        -:  209:            }
+    #####:  210:            check = str.substr(find + 1, find2 - find - 1);
+    %%%%%:  210-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  210-block  1
+call    3 never executed
+call    4 never executed
+    #####:  211:            notWords.push_back(check);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  212:        }
+    #####:  213:        else if(check == "AUTHOR"){
+    %%%%%:  213-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  214:            int find2 = str.find(' ', find + 1);
+    %%%%%:  214-block  0
+call    0 never executed
+    #####:  215:            if(find2 == -1){
+branch  0 never executed
+branch  1 never executed
+    #####:  216:                find2 = length;
+    %%%%%:  216-block  0
+        -:  217:            }
+    #####:  218:            author = str.substr(find + 1, find2 - find - 1);
+    %%%%%:  218-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  218-block  1
+call    3 never executed
+call    4 never executed
+    #####:  219:            break;
+        -:  220:        }
+    #####:  221:        else if(ifAnd){
+    %%%%%:  221-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  222:            if(removeStops(check)){
+    %%%%%:  222-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  222-block  1
+branch  3 never executed
+branch  4 never executed
+    #####:  223:                stemming(check);
+    %%%%%:  223-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  224:                andWords.push_back(check);
+    %%%%%:  224-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  225:            }
+        -:  226:        }
+        -:  227:        else{
+    #####:  228:            if(removeStops(check)){
+    %%%%%:  228-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  228-block  1
+branch  3 never executed
+branch  4 never executed
+    #####:  229:                stemming(check);
+    %%%%%:  229-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  230:                orWords.push_back(check);
+    %%%%%:  230-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  231:            }
+        -:  232:        }
+    #####:  233:        index = find;
+    %%%%%:  233-block  0
+        -:  234:    }
+        -:  235:
+        -:  236:
+        -:  237:    //TODO: Search AVL tree and Hash Table
+    #####:  238:    vector<string> printIds;//final list of IDs to send to output
+    %%%%%:  238-block  0
+call    0 never executed
+    $$$$$:  238-block  1
+call    1 never executed
+    #####:  239:    set<string> searchFrom;
+call    0 never executed
+    $$$$$:  239-block  0
+call    1 never executed
+    #####:  240:    if(author.length() > 0){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  241:        searchFrom = authors.get(author);
+    %%%%%:  241-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  241-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:  242:    }
+        -:  243:
+    #####:  244:    if(ifAnd && !andWords.empty()){// IF AND OPERATOR
+    %%%%%:  244-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:  244-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  244-block  2
+    %%%%%:  244-block  3
+    %%%%%:  244-block  4
+branch  5 never executed
+branch  6 never executed
+    #####:  245:        vector<string> andIDs;
+    %%%%%:  245-block  0
+call    0 never executed
+call    1 never executed
+    $$$$$:  245-block  1
+call    2 never executed
+    #####:  246:        andIDs = keywords.find(andWords.at(0))->getValues();
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  246-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  246-block  1
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  246-block  2
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  246-block  3
+call   12 never executed
+call   13 never executed
+call   14 never executed
+    $$$$$:  246-block  4
+call   15 never executed
+    $$$$$:  246-block  5
+    #####:  247:        for(int i = 1; i < andWords.size(); i++){
+    %%%%%:  247-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  248:            vector<string> temp;
+    %%%%%:  248-block  0
+call    0 never executed
+call    1 never executed
+    $$$$$:  248-block  1
+call    2 never executed
+    #####:  249:            vector<string> compare = keywords.find(andWords.at(i))->getValues();
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  249-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  249-block  1
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  249-block  2
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  249-block  3
+call   12 never executed
+    $$$$$:  249-block  4
+    $$$$$:  249-block  5
+call   13 never executed
+    #####:  250:            for(string ids : andIDs){
+call    0 never executed
+call    1 never executed
+    %%%%%:  250-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  250-block  1
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  250-block  2
+call    9 never executed
+call   10 never executed
+    $$$$$:  250-block  3
+call   11 never executed
+    #####:  251:                bool contains = false;
+    #####:  252:                for(string compIds : compare){
+    %%%%%:  252-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:  252-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  252-block  2
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  252-block  3
+call    9 never executed
+call   10 never executed
+    $$$$$:  252-block  4
+call   11 never executed
+    #####:  253:                    if(compIds == ids){
+    %%%%%:  253-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  254:                        if(searchFrom.empty()){
+    %%%%%:  254-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  255:                            contains = true;//check if id appears in both lists
+    %%%%%:  255-block  0
+        -:  256:                        }
+        -:  257:                        else{
+    #####:  258:                            if(searchFrom.count(ids) == 1)
+    %%%%%:  258-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  258-block  1
+branch  3 never executed
+branch  4 never executed
+    #####:  259:                                contains = true;
+    %%%%%:  259-block  0
+        -:  260:                        }
+        -:  261:                    }
+        -:  262:                }
+    #####:  263:                if(contains){
+    %%%%%:  263-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  264:                    temp.push_back(ids);
+    %%%%%:  264-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  265:                }
+        -:  266:                    ;//only keep ids that appear in all lists
+        -:  267:            }//for each string in andIDs, check if it is in the next list, if not remove it
+    #####:  268:            andIDs = temp;
+    %%%%%:  268-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  269:        }//for every list of ids that correspond to an AND word
+        -:  270:
+        -:  271:        //once all AND ids are found, add them to printIds
+    #####:  272:        printIds = andIDs;
+    %%%%%:  272-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  273:
+        -:  274:        /*
+        -:  275:         * relevancy score = (# of times that word appears in that document)*
+        -:  276:         * log((#of documents total)/(# of documents that contain that word))
+        -:  277:         *
+        -:  278:         * # of times the word appears in that document: is the ranking number from the vector in the AVL Node
+        -:  279:         * # of documents total is member value: numDocuments
+        -:  280:         * # of documents that contain that word: is length of value list in node
+        -:  281:         */
+    #####:  282:        list<pair<int,string>> scoreForId;//organize scores based on ids
+    %%%%%:  282-block  0
+call    0 never executed
+    %%%%%:  282-block  1
+call    1 never executed
+    $$$$$:  282-block  2
+call    2 never executed
+    #####:  283:        for(int i =0; i < printIds.size(); i++){
+    %%%%%:  283-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  284:            int currentScore = 0;
+    #####:  285:            for( string word : andWords){
+    %%%%%:  285-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:  285-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  285-block  2
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+call    9 never executed
+call   10 never executed
+    $$$$$:  285-block  3
+call   11 never executed
+    #####:  286:                vector<string> temp = keywords.find(word)->getValues();
+    %%%%%:  286-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  286-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  286-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  286-block  3
+call    9 never executed
+    $$$$$:  286-block  4
+    $$$$$:  286-block  5
+call   10 never executed
+    #####:  287:                for(int j = 0; j < temp.size(); j++){
+    %%%%%:  287-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  287-block  1
+    #####:  288:                    if(temp.at(j)==printIds.at(i))//add TF IDF
+    %%%%%:  288-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  288-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  288-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    #####:  289:                        currentScore += (keywords.find(word)->getRankings().at(j))*log(numDocuments/temp.size());
+    %%%%%:  289-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  289-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  289-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  289-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  289-block  4
+call   12 never executed
+call   13 never executed
+call   14 never executed
+call   15 never executed
+    $$$$$:  289-block  5
+call   16 never executed
+    $$$$$:  289-block  6
+    $$$$$:  289-block  7
+call   17 never executed
+    $$$$$:  289-block  8
+        -:  290:                }//check ids for that word to see if the score needs to be added to
+        -:  291:            }//check ids for all words
+    #####:  292:            pair<int, string> addPair = make_pair(currentScore, printIds.at(i));
+    %%%%%:  292-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  292-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  292-block  2
+call    6 never executed
+    $$$$$:  292-block  3
+call    7 never executed
+    #####:  293:            scoreForId.push_back(addPair);
+    %%%%%:  293-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  294:        }
+    #####:  295:        scoreForId.sort();
+    %%%%%:  295-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  296:        printIds.clear();
+    %%%%%:  296-block  0
+call    0 never executed
+    #####:  297:        for(auto& item :scoreForId){
+call    0 never executed
+call    1 never executed
+    %%%%%:  297-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  297-block  1
+call    5 never executed
+    %%%%%:  297-block  2
+call    6 never executed
+    #####:  298:            printIds.push_back(get<1>(item));//push strings from pairs back into idlist in order
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  299:        }
+        -:  300:    }//add only ids that appear in all AND words lists
+        -:  301:    else{//IF OR OPERATOR
+    #####:  302:        for(int i = 0; i < orWords.size(); i++){
+    %%%%%:  302-block  0
+    %%%%%:  302-block  1
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  303:            vector<string> compare = keywords.find(orWords.at(i))->getValues();
+    %%%%%:  303-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  303-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  303-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  303-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  303-block  4
+call   12 never executed
+    $$$$$:  303-block  5
+    $$$$$:  303-block  6
+call   13 never executed
+    #####:  304:            for(string compIds : compare){
+call    0 never executed
+call    1 never executed
+    %%%%%:  304-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  304-block  1
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  304-block  2
+call    9 never executed
+call   10 never executed
+    $$$$$:  304-block  3
+call   11 never executed
+    #####:  305:                bool contains = false;
+    #####:  306:                for(string ids : printIds){//check if printIDs has this document _ id already
+    %%%%%:  306-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:  306-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  306-block  2
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  306-block  3
+call    9 never executed
+call   10 never executed
+    #####:  307:                    if(ids == compIds)
+    %%%%%:  307-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  308:                        contains = true;
+    %%%%%:  308-block  0
+        -:  309:                }
+    #####:  310:                if(!contains){
+    %%%%%:  310-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  311:                    if(searchFrom.empty()){
+    %%%%%:  311-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  312:                        printIds.push_back(compIds);//check if id appears in both lists
+    %%%%%:  312-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  313:                    }
+        -:  314:                    else{
+    #####:  315:                        if(searchFrom.count(compIds) == 1)
+    %%%%%:  315-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  315-block  1
+branch  3 never executed
+branch  4 never executed
+    #####:  316:                            printIds.push_back(compIds);
+    %%%%%:  316-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  317:                    }
+        -:  318:                }
+        -:  319:            }
+        -:  320:        }
+        -:  321:
+    #####:  322:        list<pair<int,string>> scoreForId;//organize scores based on ids
+    %%%%%:  322-block  0
+call    0 never executed
+    %%%%%:  322-block  1
+call    1 never executed
+    $$$$$:  322-block  2
+call    2 never executed
+    #####:  323:        for(int i =0; i < printIds.size(); i++){
+    %%%%%:  323-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  324:            int currentScore = 0;
+    #####:  325:            for( string word : orWords){
+    %%%%%:  325-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:  325-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  325-block  2
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+call    9 never executed
+call   10 never executed
+    $$$$$:  325-block  3
+call   11 never executed
+    #####:  326:                vector<string> temp = keywords.find(word)->getValues();
+    %%%%%:  326-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  326-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  326-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  326-block  3
+call    9 never executed
+    $$$$$:  326-block  4
+    $$$$$:  326-block  5
+call   10 never executed
+    #####:  327:                for(int j = 0; j < temp.size(); j++){
+    %%%%%:  327-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  327-block  1
+    #####:  328:                    if(temp.at(j)==printIds.at(i))//add TF IDF
+    %%%%%:  328-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  328-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  328-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    #####:  329:                        currentScore += (keywords.find(word)->getRankings().at(j))*log(numDocuments/temp.size());
+    %%%%%:  329-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  329-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  329-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  329-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  329-block  4
+call   12 never executed
+call   13 never executed
+call   14 never executed
+call   15 never executed
+    $$$$$:  329-block  5
+call   16 never executed
+    $$$$$:  329-block  6
+    $$$$$:  329-block  7
+call   17 never executed
+    $$$$$:  329-block  8
+        -:  330:                }//check ids for that word to see if the score needs to be added to
+        -:  331:            }//check ids for all words
+    #####:  332:            pair<int, string> addPair = make_pair(currentScore, printIds.at(i));
+    %%%%%:  332-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  332-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  332-block  2
+call    6 never executed
+    $$$$$:  332-block  3
+call    7 never executed
+    #####:  333:            scoreForId.push_back(addPair);
+    %%%%%:  333-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  334:        }
+    #####:  335:        scoreForId.sort();
+    %%%%%:  335-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  336:        printIds.clear();
+    %%%%%:  336-block  0
+call    0 never executed
+    #####:  337:        for(auto& item :scoreForId){
+call    0 never executed
+call    1 never executed
+    %%%%%:  337-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  337-block  1
+call    5 never executed
+    %%%%%:  337-block  2
+call    6 never executed
+    #####:  338:            printIds.push_back(get<1>(item));//push strings from pairs back into idlist in order
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  339:        }
+        -:  340:    }//add all ids that appear in OR words lists
+    #####:  341:    if(notWords.size() > 0){
+    %%%%%:  341-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  342:        vector<string> notIDs;
+    %%%%%:  342-block  0
+call    0 never executed
+    $$$$$:  342-block  1
+call    1 never executed
+        -:  343:
+    #####:  344:        for(int i = 0; i < notWords.size(); i++){
+    %%%%%:  344-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  345:            //TODO: have this do contains beforehand to avoid seg faulting
+    #####:  346:            if(DEBUG && !keywords.contains(notWords.at(i))){
+    %%%%%:  346-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  346-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  346-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  346-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    $$$$$:  346-block  4
+call   12 never executed
+    $$$$$:  346-block  5
+    #####:  347:                cout << notWords.at(i) << endl;
+    %%%%%:  347-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  347-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  347-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    #####:  348:                return;
+    %%%%%:  348-block  0
+        -:  349:            }
+    #####:  350:            vector<string> temp = keywords.find(notWords.at(i))->getValues();
+    %%%%%:  350-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  350-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  350-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  350-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  350-block  4
+call   12 never executed
+    $$$$$:  350-block  5
+    $$$$$:  350-block  6
+call   13 never executed
+    #####:  351:            for(string id : temp){
+call    0 never executed
+call    1 never executed
+    %%%%%:  351-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  351-block  1
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  351-block  2
+call    9 never executed
+call   10 never executed
+    $$$$$:  351-block  3
+call   11 never executed
+    #####:  352:                notIDs.push_back(id);
+    %%%%%:  352-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  353:            }//form a list of notIDS (doesn't matter that there are repeats)
+        -:  354:        }// for each list of ids corresponding to not words, iterate through them and add to temp list
+        -:  355:        //once list of notIDs formed, remove any ids from printIDs that appear in notIds
+    #####:  356:        vector<string> temp;
+    %%%%%:  356-block  0
+call    0 never executed
+    %%%%%:  356-block  1
+call    1 never executed
+    $$$$$:  356-block  2
+call    2 never executed
+    #####:  357:        for(string id : printIds){
+call    0 never executed
+call    1 never executed
+    %%%%%:  357-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  357-block  1
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  357-block  2
+call    9 never executed
+call   10 never executed
+    $$$$$:  357-block  3
+call   11 never executed
+    #####:  358:            bool contains = false;
+    #####:  359:            for(string compID : notIDs){
+    %%%%%:  359-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:  359-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  359-block  2
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  359-block  3
+call    9 never executed
+call   10 never executed
+    #####:  360:                if (id == compID)
+    %%%%%:  360-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  361:                    contains = true;
+    %%%%%:  361-block  0
+        -:  362:            }
+    #####:  363:            if(!contains)//only keep printIds that are not in the NOT ids list
+    %%%%%:  363-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  364:                temp.push_back(id);
+    %%%%%:  364-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  365:        }
+    #####:  366:        printIds = temp;
+    %%%%%:  366-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  367:    }//remove ids that appear in NOT words lists
+        -:  368:
+        -:  369:    // andWords and orWords are searched for in doc list
+        -:  370:
+        -:  371:    //set<string> printIds = keywords.find(*it->c_str());
+        -:  372:
+    #####:  373:    output(printIds);
+    %%%%%:  373-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  374:
+        -:  375:
+        -:  376:}
+        -:  377:
+        -:  378:/**
+        -:  379: * Checks to see if given word is a stop word
+        -:  380: * @param word Word to check if it is a stop word
+        -:  381: * @return true if word wasn't a stop word, false if it was
+        -:  382: */
+function _ZN6Runner11removeStopsERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 17088 returned 100% blocks executed 81%
+    17088:  383:bool Runner::removeStops(string& word){
+    34176:  384:    string lowered = ((char) tolower(word[0])) + (word.substr(1, word.length()));
+    17088:  384-block  0
+call    0 returned 17088
+call    1 returned 17088
+branch  2 taken 17088 (fallthrough)
+branch  3 taken 0 (throw)
+    17088:  384-block  1
+call    4 returned 17088
+branch  5 taken 17088 (fallthrough)
+branch  6 taken 0 (throw)
+    17088:  384-block  2
+call    7 returned 17088
+branch  8 taken 17088 (fallthrough)
+branch  9 taken 0 (throw)
+    17088:  384-block  3
+call   10 returned 17088
+    $$$$$:  384-block  4
+    17088:  385:    if(binarySearch(lowered, 636) != -1)
+call    0 returned 17088
+branch  1 taken 6485 (fallthrough)
+branch  2 taken 10603
+     6485:  386:        return false;
+     6485:  386-block  0
+    10603:  387:    return true;
+    10603:  387-block  0
+        -:  388:}
+        -:  389:
+        -:  390:/**
+        -:  391: * Does a binary search of the stopWords.txt file
+        -:  392: * @param find String to find
+        -:  393: * @param length Length of stopwords
+        -:  394: * @return index of stop word, -1 if not found
+        -:  395: */
+function _ZN6Runner12binarySearchERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEi called 17088 returned 100% blocks executed 100%
+    17088:  396:int Runner::binarySearch(string& find, int length)
+        -:  397:{
+    17088:  398:    int lower = 0;
+    17088:  399:    int upper = length - 1;
+    17088:  399-block  0
+   166968:  400:    while (lower <= upper) {
+   166968:  400-block  0
+branch  0 taken 156365 (fallthrough)
+branch  1 taken 10603
+   149880:  400-block  1
+   156365:  401:        int mid = lower + (upper - lower) / 2;
+   156365:  402:        if (find == (stopWords[mid]))
+   156365:  402-block  0
+call    0 returned 156365
+branch  1 taken 6485 (fallthrough)
+branch  2 taken 149880
+     6485:  403:            return mid;
+     6485:  403-block  0
+   149880:  404:        if (find > (stopWords[mid]))
+   149880:  404-block  0
+call    0 returned 149880
+branch  1 taken 71317 (fallthrough)
+branch  2 taken 78563
+    71317:  405:            lower = mid + 1;
+    71317:  405-block  0
+        -:  406:        else
+    78563:  407:            upper = mid - 1;
+    78563:  407-block  0
+        -:  408:    }
+    10603:  409:    return -1;
+    10603:  409-block  0
+        -:  410:}
+        -:  411:
+        -:  412:/**
+        -:  413: * Calls Port2Stemmer for stemming
+        -:  414: * @param str word to stem
+        -:  415: */
+function _ZN6Runner8stemmingERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 10603 returned 100% blocks executed 100%
+    10603:  416:void Runner::stemming(string& str){
+    10603:  417:    Porter2Stemmer::stem(str);
+    10603:  417-block  0
+call    0 returned 10603
+    10603:  418:}
+        -:  419:
+        -:  420:/**
+        -:  421: *
+        -:  422: * @param docIds
+        -:  423: */
+function _ZN6Runner6outputERSt6vectorINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESaIS6_EE called 0 returned 0% blocks executed 0%
+    #####:  424:void Runner::output(vector<string>& docIds){
+        -:  425:   //prins title and author for first 15 documents query output
+    #####:  426:    for( int i = 0; i < docIds.size() && i < 15; i ++){
+    %%%%%:  426-block  0
+    %%%%%:  426-block  1
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  426-block  2
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  426-block  3
+    %%%%%:  426-block  4
+    %%%%%:  426-block  5
+branch  5 never executed
+branch  6 never executed
+    #####:  427:        string file = docIds.at(i);
+    %%%%%:  427-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  427-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+call    6 never executed
+    $$$$$:  427-block  2
+call    7 never executed
+    #####:  428:        cout << endl << file << endl;
+    %%%%%:  428-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  428-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  428-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    #####:  429:        rapidjson::Document doc;
+    %%%%%:  429-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+    $$$$$:  429-block  1
+call    4 never executed
+    #####:  430:        ifstream  streamy((filePath+"/"+file+".json").c_str());
+    %%%%%:  430-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  430-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  430-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  430-block  3
+call    9 never executed
+call   10 never executed
+branch 11 never executed
+branch 12 never executed
+call   13 never executed
+call   14 never executed
+call   15 never executed
+    $$$$$:  430-block  4
+    $$$$$:  430-block  5
+    $$$$$:  430-block  6
+    $$$$$:  430-block  7
+call   16 never executed
+        -:  431:        //put the whole file's data into a string:
+    #####:  432:        string wholeFile;
+call    0 never executed
+call    1 never executed
+    $$$$$:  432-block  0
+call    2 never executed
+    #####:  433:        string temp;
+call    0 never executed
+call    1 never executed
+    $$$$$:  433-block  0
+call    2 never executed
+    #####:  434:        while(getline(streamy,temp)){wholeFile+=temp;}
+    %%%%%:  434-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  434-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  434-block  2
+branch  6 never executed
+branch  7 never executed
+    %%%%%:  434-block  3
+call    8 never executed
+branch  9 never executed
+branch 10 never executed
+    %%%%%:  434-block  4
+    #####:  435:        streamy.close();
+    %%%%%:  435-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  436:        doc.Parse(wholeFile.c_str());
+    %%%%%:  436-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  437:        //PRINT TITLE
+    #####:  438:        cout << endl << "[" << i << "] ";//rank
+    %%%%%:  438-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  438-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  438-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  438-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    #####:  439:        cout << doc["metadata"]["title"].GetString() << endl;
+    %%%%%:  439-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  439-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  439-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  439-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  439-block  4
+call   12 never executed
+branch 13 never executed
+branch 14 never executed
+        -:  440:        //PRINT AUTHORS
+    #####:  441:        int count = 0;
+    #####:  442:        for(auto &v : doc["metadata"]["authors"].GetArray()){
+    %%%%%:  442-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  442-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  442-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  442-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  442-block  4
+call   12 never executed
+branch 13 never executed
+branch 14 never executed
+    %%%%%:  442-block  5
+    %%%%%:  442-block  6
+branch 15 never executed
+branch 16 never executed
+    %%%%%:  442-block  7
+call   17 never executed
+    $$$$$:  442-block  8
+call   18 never executed
+    #####:  443:            if(count < 3)
+    %%%%%:  443-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  444:            cout<< v["first"].GetString() << " " << v["last"].GetString() <<  v["suffix"].GetString() << ", ";
+    %%%%%:  444-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  444-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  444-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  444-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  444-block  4
+call   12 never executed
+branch 13 never executed
+branch 14 never executed
+    %%%%%:  444-block  5
+call   15 never executed
+branch 16 never executed
+branch 17 never executed
+    %%%%%:  444-block  6
+call   18 never executed
+branch 19 never executed
+branch 20 never executed
+    %%%%%:  444-block  7
+call   21 never executed
+branch 22 never executed
+branch 23 never executed
+    %%%%%:  444-block  8
+call   24 never executed
+branch 25 never executed
+branch 26 never executed
+    %%%%%:  444-block  9
+call   27 never executed
+branch 28 never executed
+branch 29 never executed
+    %%%%%:  444-block 10
+call   30 never executed
+branch 31 never executed
+branch 32 never executed
+        -:  445:
+    #####:  446:           count++;
+    %%%%%:  446-block  0
+        -:  447:        }//print first 3 authors
+        -:  448:    }//for first 15 files
+    #####:  449:    int menu = 0;
+    %%%%%:  449-block  0
+    #####:  450:    do{
+    %%%%%:  450-block  0
+    #####:  451:        cout << endl << "Enter the number for the document you want to open, or a negative number to quit..." << endl;
+    %%%%%:  451-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  451-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  451-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    #####:  452:        cin >> menu;
+    %%%%%:  452-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  453:        if(menu >= 0 && menu < docIds.size()){
+    %%%%%:  453-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:  453-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  453-block  2
+    %%%%%:  453-block  3
+    %%%%%:  453-block  4
+branch  5 never executed
+branch  6 never executed
+    #####:  454:            string file = docIds.at(menu);
+    %%%%%:  454-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  454-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+call    6 never executed
+    $$$$$:  454-block  2
+call    7 never executed
+    #####:  455:            cout << file << endl;
+    %%%%%:  455-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  455-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:  456:            rapidjson::Document doc;
+    %%%%%:  456-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+    $$$$$:  456-block  1
+call    4 never executed
+    #####:  457:            ifstream  streamy((filePath+"/"+file+".json").c_str());
+    %%%%%:  457-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  457-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  457-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  457-block  3
+call    9 never executed
+call   10 never executed
+branch 11 never executed
+branch 12 never executed
+call   13 never executed
+call   14 never executed
+call   15 never executed
+    $$$$$:  457-block  4
+    $$$$$:  457-block  5
+    $$$$$:  457-block  6
+    $$$$$:  457-block  7
+call   16 never executed
+        -:  458:            //put the whole file's data into a string:
+    #####:  459:            string wholeFile;
+call    0 never executed
+call    1 never executed
+    $$$$$:  459-block  0
+call    2 never executed
+    #####:  460:            string temp;
+call    0 never executed
+call    1 never executed
+    $$$$$:  460-block  0
+call    2 never executed
+    #####:  461:            while(getline(streamy,temp)){wholeFile+=temp;}
+    %%%%%:  461-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  461-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  461-block  2
+branch  6 never executed
+branch  7 never executed
+    %%%%%:  461-block  3
+call    8 never executed
+branch  9 never executed
+branch 10 never executed
+    %%%%%:  461-block  4
+    #####:  462:            streamy.close();
+    %%%%%:  462-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  463:            doc.Parse(wholeFile.c_str());
+    %%%%%:  463-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  464:            int wordsPrinted = 0;
+    #####:  465:            for(auto &v : doc["body_text"].GetArray()) {
+    %%%%%:  465-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  465-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  465-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  465-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    %%%%%:  465-block  4
+    %%%%%:  465-block  5
+branch 12 never executed
+branch 13 never executed
+    %%%%%:  465-block  6
+    %%%%%:  465-block  7
+call   14 never executed
+    $$$$$:  465-block  8
+call   15 never executed
+    #####:  466:                cout << v["text"].GetString() << endl;//print json body text
+    %%%%%:  466-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  466-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  466-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  466-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    #####:  467:                istringstream inSS(v["text"].GetString());
+    %%%%%:  467-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  467-block  1
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:  467-block  2
+call    7 never executed
+branch  8 never executed
+branch  9 never executed
+    %%%%%:  467-block  3
+call   10 never executed
+branch 11 never executed
+branch 12 never executed
+call   13 never executed
+    $$$$$:  467-block  4
+    $$$$$:  467-block  5
+    $$$$$:  467-block  6
+call   14 never executed
+    #####:  468:                inSS >> temp;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  469:                wordsPrinted++;
+    %%%%%:  469-block  0
+    #####:  470:                while(!inSS.eof()) {//parses file word by word via string stream
+    %%%%%:  470-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  470-block  1
+branch  3 never executed
+branch  4 never executed
+    #####:  471:                    inSS >> temp;
+    %%%%%:  471-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  472:                    wordsPrinted++;
+    %%%%%:  472-block  0
+        -:  473:                }
+    #####:  474:                if(wordsPrinted > 300)
+    %%%%%:  474-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  475:                    break;//stop printing if past 300 words
+    %%%%%:  475-block  0
+        -:  476:            }//for each line of body_text
+        -:  477:        }//if valid document option, parse document
+    #####:  478:        else if(menu < docIds.size()){
+    %%%%%:  478-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  479:            cout << "That document ID is too large :( please follow instructions ..." << endl;
+    %%%%%:  479-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  479-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:  480:        }//if user input is larger than document list
+    #####:  481:    }while(menu >= 0);
+    %%%%%:  481-block  0
+branch  0 never executed
+branch  1 never executed
+        -:  482:    /*
+        -:  483:    auto iter = docIds.begin();
+        -:  484:    while(iter != docIds.end()){
+        -:  485:        cout << (*iter) << endl;
+        -:  486:        iter++;
+        -:  487:    }
+        -:  488:    */
+    #####:  489:}//output
+    %%%%%:  489-block  0
+        -:  490:
+        -:  491://Returns keywords
+function _ZN6Runner11getKeyWordsB5cxx11Ev called 3 returned 100% blocks executed 100%
+        3:  492:DSAVLTree<string, string, int>& Runner::getKeyWords(){
+        3:  493:    return keywords;
+        3:  493-block  0
+        -:  494:}
+        -:  495:
+        -:  496://Returns authors
+function _ZN6Runner10getAuthorsB5cxx11Ev called 0 returned 0% blocks executed 0%
+    #####:  497:DSHashTable<string,string>& Runner::getAuthors(){
+    #####:  498:    return authors;
+    %%%%%:  498-block  0
+        -:  499:}
+        -:  500:
+        -:  501:/**
+        -:  502: * Clears keywords and authors of elements
+        -:  503: */
+function _ZN6Runner10clearIndexEv called 1 returned 100% blocks executed 100%
+        1:  504:void Runner::clearIndex(){
+        1:  505:    keywords.clear();
+        1:  505-block  0
+call    0 returned 1
+        1:  506:    authors.clear();
+call    0 returned 1
+        1:  507:}

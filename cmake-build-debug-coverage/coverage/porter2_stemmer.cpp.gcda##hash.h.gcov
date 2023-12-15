@@ -1,0 +1,714 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/hash.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/porter2_stemmer.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/porter2_stemmer.cpp.gcda
+        -:    0:Runs:1
+        -:    1:/**
+        -:    2: * @file hash.h
+        -:    3: * @author Chase Geigle
+        -:    4: *
+        -:    5: * All files in META are dual-licensed under the MIT and NCSA licenses. For more
+        -:    6: * details, consult the file LICENSE.mit and LICENSE.ncsa in the root of the
+        -:    7: * project.
+        -:    8: */
+        -:    9:
+        -:   10:#ifndef META_UTIL_HASH_H_
+        -:   11:#define META_UTIL_HASH_H_
+        -:   12:
+        -:   13:#include <array>
+        -:   14:#include <cassert>
+        -:   15:#include <cstdint>
+        -:   16:#include <random>
+        -:   17:
+        -:   18:namespace meta
+        -:   19:{
+        -:   20:namespace util
+        -:   21:{
+        -:   22:
+        -:   23:namespace detail
+        -:   24:{
+        -:   25:template <bool...>
+        -:   26:struct static_and;
+        -:   27:
+        -:   28:template <bool B, bool... Bs>
+        -:   29:struct static_and<B, Bs...>
+        -:   30:{
+        -:   31:    const static constexpr bool value = B && static_and<Bs...>::value;
+        -:   32:};
+        -:   33:
+        -:   34:template <>
+        -:   35:struct static_and<>
+        -:   36:{
+        -:   37:    const static constexpr bool value = true;
+        -:   38:};
+        -:   39:
+        -:   40:template <std::size_t...>
+        -:   41:struct static_add;
+        -:   42:
+        -:   43:template <std::size_t Size, std::size_t... Sizes>
+        -:   44:struct static_add<Size, Sizes...>
+        -:   45:{
+        -:   46:    const static constexpr std::size_t value
+        -:   47:        = Size + static_add<Sizes...>::value;
+        -:   48:};
+        -:   49:
+        -:   50:template <>
+        -:   51:struct static_add<>
+        -:   52:{
+        -:   53:    const static constexpr std::size_t value = 0;
+        -:   54:};
+        -:   55:}
+        -:   56:
+        -:   57:/**
+        -:   58: * Implementation of MurmurHash3. Depending on the template parameter, it
+        -:   59: * will return a 32-bit or 64-bit hash value.
+        -:   60: */
+        -:   61:template <std::size_t = sizeof(std::size_t)>
+        -:   62:class murmur_hash;
+        -:   63:
+        -:   64:namespace detail
+        -:   65:{
+        -:   66:inline uint32_t rotl(uint32_t x, int8_t r)
+        -:   67:{
+        -:   68:    return (x << r) | (x >> (32 - r));
+        -:   69:}
+        -:   70:
+function _ZN4meta4util6detail4rotlEma called 32774 returned 100% blocks executed 100%
+    32774:   71:inline uint64_t rotl(uint64_t x, int8_t r)
+        -:   72:{
+    32774:   73:    return (x << r) | (x >> (64 - r));
+    32774:   73-block  0
+        -:   74:}
+        -:   75:
+        -:   76:inline uint32_t fmix(uint32_t h)
+        -:   77:{
+        -:   78:    h ^= h >> 16;
+        -:   79:    h *= 0x85ebca6b;
+        -:   80:    h ^= h >> 13;
+        -:   81:    h *= 0xc2b2ae35;
+        -:   82:    h ^= h >> 16;
+        -:   83:
+        -:   84:    return h;
+        -:   85:}
+        -:   86:
+function _ZN4meta4util6detail4fmixEm called 19854 returned 100% blocks executed 100%
+    19854:   87:inline uint64_t fmix(uint64_t h)
+        -:   88:{
+    19854:   89:    h ^= h >> 33;
+    19854:   90:    h *= 0xff51afd7ed558ccdLLU;
+    19854:   91:    h ^= h >> 33;
+    19854:   92:    h *= 0xc4ceb9fe1a85ec53LLU;
+    19854:   93:    h ^= h >> 33;
+        -:   94:
+    19854:   95:    return h;
+    19854:   95-block  0
+        -:   96:}
+        -:   97:}
+        -:   98:
+        -:   99:/**
+        -:  100: * Murmur3Hash for 32-bit outputs. Based on MurmurHash3_x86_32.
+        -:  101: */
+        -:  102:template <>
+        -:  103:class murmur_hash<4>
+        -:  104:{
+        -:  105:  private:
+        -:  106:    // this *has* to be uint32_t for OS X clang to correctly resolve
+        -:  107:    // between the two versions of rotl/fmix in namespace detail above.
+        -:  108:    uint32_t out_;
+        -:  109:    std::array<uint8_t, 4> buf_;
+        -:  110:    uint32_t buflen_;
+        -:  111:    uint32_t total_length_;
+        -:  112:
+        -:  113:    const static constexpr uint32_t c1 = 0xcc9e2d51;
+        -:  114:    const static constexpr uint32_t c2 = 0x1b873593;
+        -:  115:
+        -:  116:    void handle_block_4(uint32_t block)
+        -:  117:    {
+        -:  118:        block *= c1;
+        -:  119:        block = detail::rotl(block, 15);
+        -:  120:        block *= c2;
+        -:  121:
+        -:  122:        out_ ^= block;
+        -:  123:        out_ = detail::rotl(out_, 13);
+        -:  124:        out_ = out_ * 5 + 0xe6546b64;
+        -:  125:    }
+        -:  126:
+        -:  127:  public:
+        -:  128:    using result_type = std::size_t;
+        -:  129:
+        -:  130:    murmur_hash(std::size_t seed)
+        -:  131:        : out_{static_cast<uint32_t>(seed)}, buflen_{0}, total_length_{0}
+        -:  132:    {
+        -:  133:    }
+        -:  134:
+        -:  135:    void operator()(const void* in, std::size_t len)
+        -:  136:    {
+        -:  137:        auto data = reinterpret_cast<const uint8_t*>(in);
+        -:  138:        total_length_ += static_cast<uint32_t>(len);
+        -:  139:
+        -:  140:        // handle 4-byte blocks at a time, starting from the data we had
+        -:  141:        // "left over" from the last call to operator()
+        -:  142:        auto end = data + len;
+        -:  143:        while (buflen_ > 0 && buflen_ < 4 && data < end)
+        -:  144:            buf_[buflen_++] = *(data++);
+        -:  145:
+        -:  146:        if (buflen_ / 4 > 0)
+        -:  147:        {
+        -:  148:            handle_block_4(reinterpret_cast<const uint32_t*>(buf_.data())[0]);
+        -:  149:            buflen_ = 0;
+        -:  150:        }
+        -:  151:
+        -:  152:        // now handle the remaining 4-byte blocks in this data
+        -:  153:        const auto nblocks = (end - data) / 4;
+        -:  154:        auto blocks = reinterpret_cast<const uint32_t*>(data + nblocks * 4);
+        -:  155:        for (long i = -nblocks; i; ++i)
+        -:  156:            handle_block_4(blocks[i]);
+        -:  157:
+        -:  158:        // copy over the remaining 3 bytes or less for finalizing or use on
+        -:  159:        // the next call to operator()
+        -:  160:        const uint8_t* tail = data + nblocks * 4;
+        -:  161:        if (end - tail)
+        -:  162:        {
+        -:  163:            buflen_ = static_cast<uint32_t>(end - tail);
+        -:  164:            assert(buflen_ < 4);
+        -:  165:            std::copy(tail, end, buf_.begin());
+        -:  166:        }
+        -:  167:    }
+        -:  168:
+        -:  169:    explicit operator std::size_t()
+        -:  170:    {
+        -:  171:        uint32_t k1 = 0;
+        -:  172:        switch (buflen_ & 3)
+        -:  173:        {
+        -:  174:            case 3:
+        -:  175:                k1 ^= static_cast<uint32_t>(buf_[2]) << 16;
+        -:  176:            case 2:
+        -:  177:                k1 ^= static_cast<uint32_t>(buf_[1]) << 8;
+        -:  178:            case 1:
+        -:  179:                k1 ^= buf_[0];
+        -:  180:                k1 *= c1;
+        -:  181:                k1 = detail::rotl(k1, 15);
+        -:  182:                k1 *= c2;
+        -:  183:                out_ ^= k1;
+        -:  184:        }
+        -:  185:
+        -:  186:        out_ ^= total_length_;
+        -:  187:
+        -:  188:        return detail::fmix(out_);
+        -:  189:    }
+        -:  190:};
+        -:  191:
+        -:  192:/**
+        -:  193: * MurmurHash3 for 64-bit outputs. Based on MurmurHash3_x64_128.
+        -:  194: */
+        -:  195:template <>
+        -:  196:class murmur_hash<8>
+        -:  197:{
+        -:  198:  private:
+        -:  199:    uint64_t h1_;
+        -:  200:    uint64_t h2_;
+        -:  201:    std::array<uint8_t, 16> buf_;
+        -:  202:    std::size_t buflen_;
+        -:  203:    std::size_t total_length_;
+        -:  204:
+        -:  205:    const static constexpr uint64_t c1 = 0x87c37b91114253d5LLU;
+        -:  206:    const static constexpr uint64_t c2 = 0x4cf5ad432745937fLLU;
+        -:  207:
+function _ZN4meta4util11murmur_hashILm8EE15handle_block_16EPKh called 4683 returned 100% blocks executed 100%
+     4683:  208:    inline void handle_block_16(const uint8_t* start)
+        -:  209:    {
+     4683:  210:        auto blocks = reinterpret_cast<const uint64_t*>(start);
+     4683:  211:        auto k1 = blocks[0];
+     4683:  212:        auto k2 = blocks[1];
+        -:  213:
+     4683:  214:        k1 *= c1;
+     4683:  215:        k1 = detail::rotl(k1, 31);
+     4683:  215-block  0
+call    0 returned 4683
+     4683:  216:        k1 *= c2;
+     4683:  217:        h1_ ^= k1;
+        -:  218:
+     4683:  219:        h1_ = detail::rotl(h1_, 27);
+call    0 returned 4683
+     4683:  220:        h1_ += h2_;
+     4683:  221:        h1_ = h1_ * 5 + 0x52dce729;
+        -:  222:
+     4683:  223:        k2 *= c2;
+     4683:  224:        k2 = detail::rotl(k2, 33);
+call    0 returned 4683
+     4683:  225:        k2 *= c1;
+     4683:  226:        h2_ ^= k2;
+        -:  227:
+     4683:  228:        h2_ = detail::rotl(h2_, 31);
+call    0 returned 4683
+     4683:  229:        h2_ += h1_;
+     4683:  230:        h2_ = h2_ * 5 + 0x38495ab5;
+     4683:  231:    }
+        -:  232:
+        -:  233:  public:
+        -:  234:    using result_type = std::size_t;
+        -:  235:
+function _ZN4meta4util11murmur_hashILm8EEC2Em called 9927 returned 100% blocks executed 100%
+     9927:  236:    murmur_hash(uint64_t seed)
+     9927:  237:        : h1_{seed}, h2_{seed}, buflen_{0}, total_length_{0}
+        -:  238:    {
+     9927:  239:    }
+        -:  240:
+function _ZN4meta4util11murmur_hashILm8EEclEPKvm called 19854 returned 100% blocks executed 95%
+    19854:  241:    void operator()(const void* in, std::size_t len)
+        -:  242:    {
+    19854:  243:        auto data = reinterpret_cast<const uint8_t*>(in);
+    19854:  244:        total_length_ += len;
+        -:  245:
+        -:  246:        // handle 16-byte blocks at a time, starting from the data we had
+        -:  247:        // "left over" from the last call to operator()
+    19854:  248:        auto end = data + len;
+    19854:  248-block  0
+    90157:  249:        while (buflen_ > 0 && buflen_ < 16 && data < end)
+    90157:  249-block  0
+branch  0 taken 80181 (fallthrough)
+branch  1 taken 9976
+    80181:  249-block  1
+branch  2 taken 75656 (fallthrough)
+branch  3 taken 4525
+    75656:  249-block  2
+branch  4 taken 70303 (fallthrough)
+branch  5 taken 5353
+    70303:  250:            buf_[buflen_++] = *(data++);
+    70303:  250-block  0
+call    0 returned 70303
+        -:  251:
+    19854:  252:        if (buflen_ / 16 > 0)
+    19854:  252-block  0
+branch  0 taken 4525 (fallthrough)
+branch  1 taken 15329
+        -:  253:        {
+     4525:  254:            handle_block_16(buf_.data());
+     4525:  254-block  0
+call    0 returned 4525
+call    1 returned 4525
+     4525:  255:            buflen_ = 0;
+        -:  256:        }
+        -:  257:
+        -:  258:        // now handle the remaining 16-byte blocks in this data
+    19854:  259:        const auto nblocks = (end - data) / 16;
+    20012:  260:        for (int i = 0; i < nblocks; ++i)
+    19854:  260-block  0
+    20012:  260-block  1
+branch  0 taken 158 (fallthrough)
+branch  1 taken 19854
+        -:  261:        {
+      158:  262:            handle_block_16(data);
+      158:  262-block  0
+call    0 returned 158
+      158:  263:            data += 16;
+        -:  264:        }
+        -:  265:
+        -:  266:        // copy over the remaining 15 bytes or less for finalizing or use
+        -:  267:        // on the next call to operator()
+    19854:  268:        if (end - data)
+    19854:  268-block  0
+branch  0 taken 13214 (fallthrough)
+branch  1 taken 6640
+        -:  269:        {
+    13214:  270:            buflen_ = static_cast<std::size_t>(end - data);
+   13214*:  271:            assert(buflen_ < 16);
+    13214:  271-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 13214
+    %%%%%:  271-block  1
+call    2 never executed
+    13214:  272:            std::copy(data, end, buf_.begin());
+    13214:  272-block  0
+call    0 returned 13214
+call    1 returned 13214
+        -:  273:        }
+    19854:  274:    }
+        -:  275:
+function _ZN4meta4util11murmur_hashILm8EEcvmEv called 9927 returned 100% blocks executed 100%
+     9927:  276:    explicit operator std::size_t()
+        -:  277:    {
+     9927:  278:        uint64_t k1 = 0;
+     9927:  279:        uint64_t k2 = 0;
+        -:  280:
+     9927:  281:        switch (buflen_)
+     9927:  281-block  0
+branch  0 taken 1130
+branch  1 taken 1078
+branch  2 taken 1309
+branch  3 taken 1104
+branch  4 taken 688
+branch  5 taken 16
+branch  6 taken 28
+branch  7 taken 49
+branch  8 taken 87
+branch  9 taken 136
+branch 10 taken 246
+branch 11 taken 427
+branch 12 taken 590
+branch 13 taken 787
+branch 14 taken 1014
+branch 15 taken 1238
+        -:  282:        {
+     1130:  283:            case 15:
+     1130:  284:                k2 ^= static_cast<uint64_t>(buf_[14]) << 48;
+     1130:  284-block  0
+call    0 returned 1130
+     2208:  285:            case 14:
+     2208:  286:                k2 ^= static_cast<uint64_t>(buf_[13]) << 40;
+     2208:  286-block  0
+call    0 returned 2208
+     3517:  287:            case 13:
+     3517:  288:                k2 ^= static_cast<uint64_t>(buf_[12]) << 32;
+     3517:  288-block  0
+call    0 returned 3517
+     4621:  289:            case 12:
+     4621:  290:                k2 ^= static_cast<uint64_t>(buf_[11]) << 24;
+     4621:  290-block  0
+call    0 returned 4621
+     5309:  291:            case 11:
+     5309:  292:                k2 ^= static_cast<uint64_t>(buf_[10]) << 16;
+     5309:  292-block  0
+call    0 returned 5309
+     5325:  293:            case 10:
+     5325:  294:                k2 ^= static_cast<uint64_t>(buf_[9]) << 8;
+     5325:  294-block  0
+call    0 returned 5325
+     5353:  295:            case 9:
+     5353:  296:                k2 ^= static_cast<uint64_t>(buf_[8]);
+     5353:  296-block  0
+call    0 returned 5353
+     5353:  297:                k2 *= c2;
+     5353:  298:                k2 = detail::rotl(k2, 33);
+call    0 returned 5353
+     5353:  299:                k2 *= c1;
+     5353:  300:                h2_ ^= k2;
+        -:  301:
+     5402:  302:            case 8:
+     5402:  303:                k1 ^= static_cast<uint64_t>(buf_[7]) << 56;
+     5402:  303-block  0
+call    0 returned 5402
+     5489:  304:            case 7:
+     5489:  305:                k1 ^= static_cast<uint64_t>(buf_[6]) << 48;
+     5489:  305-block  0
+call    0 returned 5489
+     5625:  306:            case 6:
+     5625:  307:                k1 ^= static_cast<uint64_t>(buf_[5]) << 40;
+     5625:  307-block  0
+call    0 returned 5625
+     5871:  308:            case 5:
+     5871:  309:                k1 ^= static_cast<uint64_t>(buf_[4]) << 32;
+     5871:  309-block  0
+call    0 returned 5871
+     6298:  310:            case 4:
+     6298:  311:                k1 ^= static_cast<uint64_t>(buf_[3]) << 24;
+     6298:  311-block  0
+call    0 returned 6298
+     6888:  312:            case 3:
+     6888:  313:                k1 ^= static_cast<uint64_t>(buf_[2]) << 16;
+     6888:  313-block  0
+call    0 returned 6888
+     7675:  314:            case 2:
+     7675:  315:                k1 ^= static_cast<uint64_t>(buf_[1]) << 8;
+     7675:  315-block  0
+call    0 returned 7675
+     8689:  316:            case 1:
+     8689:  317:                k1 ^= static_cast<uint64_t>(buf_[0]);
+     8689:  317-block  0
+call    0 returned 8689
+     8689:  318:                k1 *= c1;
+     8689:  319:                k1 = detail::rotl(k1, 31);
+call    0 returned 8689
+     8689:  320:                k1 *= c2;
+     8689:  321:                h1_ ^= k1;
+        -:  322:        }
+        -:  323:
+     9927:  324:        h1_ ^= total_length_;
+     9927:  325:        h2_ ^= total_length_;
+        -:  326:
+     9927:  327:        h1_ += h2_;
+     9927:  328:        h2_ += h1_;
+        -:  329:
+     9927:  330:        h1_ = detail::fmix(h1_);
+     9927:  330-block  0
+call    0 returned 9927
+     9927:  331:        h2_ = detail::fmix(h2_);
+call    0 returned 9927
+        -:  332:
+     9927:  333:        h1_ += h2_;
+        -:  334:        // h2 += h1, unneeded since we only want 64-bits.
+        -:  335:
+     9927:  336:        return h1_;
+        -:  337:    }
+        -:  338:};
+        -:  339:
+        -:  340:template <class T>
+        -:  341:struct is_contiguously_hashable
+        -:  342:{
+        -:  343:    const static constexpr bool value = std::is_integral<T>::value
+        -:  344:                                        || std::is_enum<T>::value
+        -:  345:                                        || std::is_pointer<T>::value;
+        -:  346:};
+        -:  347:
+        -:  348:template <class T>
+        -:  349:struct is_contiguously_hashable<const T> : public is_contiguously_hashable<T>
+        -:  350:{
+        -:  351:};
+        -:  352:
+        -:  353:template <class T>
+        -:  354:struct is_contiguously_hashable<const volatile T>
+        -:  355:    : public is_contiguously_hashable<T>
+        -:  356:{
+        -:  357:};
+        -:  358:
+        -:  359:template <class T, std::size_t N>
+        -:  360:struct is_contiguously_hashable<T[N]> : public is_contiguously_hashable<T>
+        -:  361:{
+        -:  362:};
+        -:  363:
+        -:  364:template <class T, class U>
+        -:  365:struct is_contiguously_hashable<std::pair<T, U>>
+        -:  366:{
+        -:  367:    const static constexpr bool value
+        -:  368:        = is_contiguously_hashable<T>::value
+        -:  369:          && is_contiguously_hashable<U>::value
+        -:  370:          && sizeof(T) + sizeof(U) == sizeof(std::pair<T, U>);
+        -:  371:};
+        -:  372:
+        -:  373:template <class... Ts>
+        -:  374:struct is_contiguously_hashable<std::tuple<Ts...>>
+        -:  375:{
+        -:  376:    const static constexpr bool value
+        -:  377:        = detail::static_and<is_contiguously_hashable<Ts>::value...>::value
+        -:  378:          && detail::static_add<sizeof(Ts)...>::value
+        -:  379:                 == sizeof(std::tuple<Ts...>);
+        -:  380:};
+        -:  381:
+        -:  382:template <class T, std::size_t N>
+        -:  383:struct is_contiguously_hashable<std::array<T, N>>
+        -:  384:{
+        -:  385:    const static constexpr bool value
+        -:  386:        = is_contiguously_hashable<T>::value
+        -:  387:          && sizeof(T) * N == sizeof(std::array<T, N>);
+        -:  388:};
+        -:  389:
+        -:  390:template <class HashAlgorithm, class T>
+        -:  391:inline typename std::enable_if<is_contiguously_hashable<T>::value>::type
+function _ZN4meta4util11hash_appendINS0_11murmur_hashILm8EEEmEENSt9enable_ifIXsrNS0_24is_contiguously_hashableIT0_EE5valueEvE4typeERT_RKS6_ called 9927 returned 100% blocks executed 100%
+     9927:  392:hash_append(HashAlgorithm& h, const T& t)
+        -:  393:{
+     9927:  394:    h(std::addressof(t), sizeof(t));
+     9927:  394-block  0
+call    0 returned 9927
+call    1 returned 9927
+     9927:  395:}
+        -:  396:
+        -:  397:template <class HashAlgorithm, class T>
+        -:  398:inline typename std::enable_if<std::is_floating_point<T>::value>::type
+        -:  399:hash_append(HashAlgorithm& h, T t)
+        -:  400:{
+        -:  401:    // -0 and 0 are the same, but have different bit patterns, so normalize
+        -:  402:    // to positive zero before hashing
+        -:  403:    if (t == 0)
+        -:  404:        t = 0;
+        -:  405:    h(std::addressof(t), sizeof(t));
+        -:  406:}
+        -:  407:
+        -:  408:template <class HashAlgorithm>
+        -:  409:inline void hash_append(HashAlgorithm& h, std::nullptr_t)
+        -:  410:{
+        -:  411:    const void* p = nullptr;
+        -:  412:    h(std::addressof(p), sizeof(p));
+        -:  413:}
+        -:  414:
+        -:  415:// all of these hash_appends below need to be forward declared so they can
+        -:  416:// find one another in their implementations
+        -:  417:
+        -:  418:template <class HashAlgorithm, class T, std::size_t N>
+        -:  419:typename std::enable_if<!is_contiguously_hashable<T>::value>::type
+        -:  420:hash_append(HashAlgorithm& h, T(&a)[N]);
+        -:  421:
+        -:  422:template <class HashAlgorithm, class T, class U>
+        -:  423:typename std::enable_if<!is_contiguously_hashable<std::pair<T, U>>::value>::type
+        -:  424:hash_append(HashAlgorithm& h, const std::pair<T, U>& p);
+        -:  425:
+        -:  426:template <class HashAlgorithm, class... Ts>
+        -:  427:typename std::enable_if<!is_contiguously_hashable<std::tuple<Ts...>>::value>::
+        -:  428:    type
+        -:  429:    hash_append(HashAlgorithm& h, const std::tuple<Ts...>& t);
+        -:  430:
+        -:  431:template <class HashAlgorithm, class T, std::size_t N>
+        -:  432:typename std::enable_if<!is_contiguously_hashable<std::array<T, N>>::value>::
+        -:  433:    type
+        -:  434:    hash_append(HashAlgorithm& h, const std::array<T, N>& a);
+        -:  435:
+        -:  436:template <class HashAlgorithm, class Char, class Traits, class Alloc>
+        -:  437:typename std::enable_if<is_contiguously_hashable<Char>::value>::type
+        -:  438:hash_append(HashAlgorithm& h, const std::basic_string<Char, Traits, Alloc>& s);
+        -:  439:
+        -:  440:template <class HashAlgorithm, class Char, class Traits, class Alloc>
+        -:  441:typename std::enable_if<!is_contiguously_hashable<Char>::value>::type
+        -:  442:hash_append(HashAlgorithm& h, const std::basic_string<Char, Traits, Alloc>& s);
+        -:  443:
+        -:  444:template <class HashAlgorithm, class T1, class T2, class... Ts>
+        -:  445:void hash_append(HashAlgorithm& h, const T1& first, const T2& second,
+        -:  446:                 const Ts&... ts);
+        -:  447:
+        -:  448:// begin implementations for hash_append
+        -:  449:
+        -:  450:template <class HashAlgorithm, class T, std::size_t N>
+        -:  451:typename std::enable_if<!is_contiguously_hashable<T>::value>::type
+        -:  452:hash_append(HashAlgorithm& h, T(&a)[N])
+        -:  453:{
+        -:  454:    for (const auto& t : a)
+        -:  455:        hash_append(h, t);
+        -:  456:}
+        -:  457:
+        -:  458:template <class HashAlgorithm, class T, class U>
+        -:  459:typename std::enable_if<!is_contiguously_hashable<std::pair<T, U>>::value>::type
+        -:  460:hash_append(HashAlgorithm& h, const std::pair<T, U>& p)
+        -:  461:{
+        -:  462:    hash_append(h, p.first, p.second);
+        -:  463:}
+        -:  464:
+        -:  465:namespace detail
+        -:  466:{
+        -:  467:// @see
+        -:  468:// http://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
+        -:  469:template <std::size_t...>
+        -:  470:struct sequence;
+        -:  471:
+        -:  472:template <std::size_t N, std::size_t... S>
+        -:  473:struct generate : generate<N - 1, N - 1, S...>
+        -:  474:{
+        -:  475:    // nothing
+        -:  476:};
+        -:  477:
+        -:  478:template <std::size_t... S>
+        -:  479:struct generate<0, S...>
+        -:  480:{
+        -:  481:    using type = sequence<S...>;
+        -:  482:};
+        -:  483:
+        -:  484:template <class HashAlgorithm, class... Ts, std::size_t... S>
+        -:  485:void hash_tuple(HashAlgorithm& h, const std::tuple<Ts...>& t, sequence<S...>)
+        -:  486:{
+        -:  487:    hash_append(h, std::get<S>(t)...);
+        -:  488:}
+        -:  489:}
+        -:  490:
+        -:  491:template <class HashAlgorithm, class... Ts>
+        -:  492:typename std::enable_if<!is_contiguously_hashable<std::tuple<Ts...>>::value>::
+        -:  493:    type
+        -:  494:    hash_append(HashAlgorithm& h, const std::tuple<Ts...>& t)
+        -:  495:{
+        -:  496:    detail::hash_tuple(h, t, typename detail::generate<sizeof...(Ts)>::type{});
+        -:  497:}
+        -:  498:
+        -:  499:template <class HashAlgorithm, class T, std::size_t N>
+        -:  500:typename std::enable_if<!is_contiguously_hashable<std::array<T, N>>::value>::
+        -:  501:    type
+        -:  502:    hash_append(HashAlgorithm& h, const std::array<T, N>& a)
+        -:  503:{
+        -:  504:    for (const auto& t : a)
+        -:  505:        hash_append(h, a);
+        -:  506:}
+        -:  507:
+        -:  508:template <class HashAlgorithm, class Char, class Traits, class Alloc>
+        -:  509:typename std::enable_if<is_contiguously_hashable<Char>::value>::type
+        -:  510:hash_append(HashAlgorithm& h, const std::basic_string<Char, Traits, Alloc>& s)
+        -:  511:{
+        -:  512:    h(s.data(), s.size() * sizeof(Char));
+        -:  513:    hash_append(h, s.size());
+        -:  514:}
+        -:  515:
+        -:  516:template <class HashAlgorithm, class Char, class Traits, class Alloc>
+        -:  517:typename std::enable_if<!is_contiguously_hashable<Char>::value>::type
+        -:  518:hash_append(HashAlgorithm& h, const std::basic_string<Char, Traits, Alloc>& s)
+        -:  519:{
+        -:  520:    for (const auto& c : s)
+        -:  521:        hash_append(h, c);
+        -:  522:    hash_append(h, s.size());
+        -:  523:}
+        -:  524:
+        -:  525:template <class HashAlgorithm, class T1, class T2, class... Ts>
+        -:  526:void hash_append(HashAlgorithm& h, const T1& first, const T2& second,
+        -:  527:                 const Ts&... ts)
+        -:  528:{
+        -:  529:    hash_append(h, first);
+        -:  530:    hash_append(h, second, ts...);
+        -:  531:}
+        -:  532:
+        -:  533:namespace detail
+        -:  534:{
+function _ZN4meta4util6detail16get_process_seedEv called 9927 returned 100% blocks executed 69%
+     9927:  535:inline uint64_t get_process_seed()
+        -:  536:{
+     9927:  537:    static uint64_t seed = std::random_device{}();
+     9927:  537-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 9926
+        1:  537-block  1
+call    2 returned 1
+branch  3 taken 1 (fallthrough)
+branch  4 taken 0
+        1:  537-block  2
+call    5 returned 1
+branch  6 taken 1 (fallthrough)
+branch  7 taken 0 (throw)
+        1:  537-block  3
+call    8 returned 1
+branch  9 taken 1 (fallthrough)
+branch 10 taken 0 (throw)
+        1:  537-block  4
+call   11 returned 1
+call   12 returned 1
+    $$$$$:  537-block  5
+call   13 never executed
+    $$$$$:  537-block  6
+    $$$$$:  537-block  7
+branch 14 never executed
+branch 15 never executed
+    $$$$$:  537-block  8
+call   16 never executed
+     9927:  538:    return seed;
+     9927:  538-block  0
+     9927:  538-block  1
+        -:  539:}
+        -:  540:}
+        -:  541:
+        -:  542:/**
+        -:  543: * A generic, randomly seeded hash function.
+        -:  544: * @see
+        -:  545: * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3980.html#seeding
+        -:  546: */
+        -:  547:template <class HashAlgorithm = util::murmur_hash<sizeof(std::size_t)>>
+        -:  548:struct hash
+        -:  549:{
+        -:  550:    using result_type = typename HashAlgorithm::result_type;
+        -:  551:
+        -:  552:    template <class T>
+function _ZNK4meta4util4hashINS0_11murmur_hashILm8EEEEclINS0_17basic_string_viewIcSt11char_traitsIcEEEEEmRKT_ called 9927 returned 100% blocks executed 100%
+     9927:  553:    result_type operator()(const T& t) const
+        -:  554:    {
+     9927:  555:        auto seed = detail::get_process_seed();
+     9927:  555-block  0
+call    0 returned 9927
+branch  1 taken 9927 (fallthrough)
+branch  2 taken 0 (throw)
+     9927:  556:        HashAlgorithm h(seed);
+     9927:  556-block  0
+call    0 returned 9927
+        -:  557:        using util::hash_append;
+     9927:  558:        hash_append(h, t);
+call    0 returned 9927
+branch  1 taken 9927 (fallthrough)
+branch  2 taken 0 (throw)
+    19854:  559:        return static_cast<result_type>(h);
+     9927:  559-block  0
+call    0 returned 9927
+     9927:  559-block  1
+        -:  560:    }
+        -:  561:};
+        -:  562:}
+        -:  563:}
+        -:  564:#endif

@@ -1,0 +1,500 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/internal/stack.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2:// 
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed 
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#ifndef RAPIDJSON_INTERNAL_STACK_H_
+        -:   16:#define RAPIDJSON_INTERNAL_STACK_H_
+        -:   17:
+        -:   18:#include "../allocators.h"
+        -:   19:#include "swap.h"
+        -:   20:#include <cstddef>
+        -:   21:
+        -:   22:#if defined(__clang__)
+        -:   23:RAPIDJSON_DIAG_PUSH
+        -:   24:RAPIDJSON_DIAG_OFF(c++98-compat)
+        -:   25:#endif
+        -:   26:
+        -:   27:RAPIDJSON_NAMESPACE_BEGIN
+        -:   28:namespace internal {
+        -:   29:
+        -:   30:///////////////////////////////////////////////////////////////////////////////
+        -:   31:// Stack
+        -:   32:
+        -:   33://! A type-unsafe stack for storing different types of data.
+        -:   34:/*! \tparam Allocator Allocator for allocating stack memory.
+        -:   35:*/
+        -:   36:template <typename Allocator>
+        -:   37:class Stack {
+        -:   38:public:
+        -:   39:    // Optimization note: Do not allocate memory for stack_ in constructor.
+        -:   40:    // Do it lazily when first Push() -> Expand() -> Resize().
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEEC2EPS2_m called 10 returned 100% blocks executed 100%
+       10:   41:    Stack(Allocator* allocator, size_t stackCapacity) : allocator_(allocator), ownAllocator_(0), stack_(0), stackTop_(0), stackEnd_(0), initialCapacity_(stackCapacity) {
+       10:   42:    }
+        -:   43:
+        -:   44:#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+        -:   45:    Stack(Stack&& rhs)
+        -:   46:        : allocator_(rhs.allocator_),
+        -:   47:          ownAllocator_(rhs.ownAllocator_),
+        -:   48:          stack_(rhs.stack_),
+        -:   49:          stackTop_(rhs.stackTop_),
+        -:   50:          stackEnd_(rhs.stackEnd_),
+        -:   51:          initialCapacity_(rhs.initialCapacity_)
+        -:   52:    {
+        -:   53:        rhs.allocator_ = 0;
+        -:   54:        rhs.ownAllocator_ = 0;
+        -:   55:        rhs.stack_ = 0;
+        -:   56:        rhs.stackTop_ = 0;
+        -:   57:        rhs.stackEnd_ = 0;
+        -:   58:        rhs.initialCapacity_ = 0;
+        -:   59:    }
+        -:   60:#endif
+        -:   61:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEED2Ev called 10 returned 100% blocks executed 100%
+       10:   62:    ~Stack() {
+       10:   63:        Destroy();
+       10:   63-block  0
+call    0 returned 10
+       10:   64:    }
+        -:   65:
+        -:   66:#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+        -:   67:    Stack& operator=(Stack&& rhs) {
+        -:   68:        if (&rhs != this)
+        -:   69:        {
+        -:   70:            Destroy();
+        -:   71:
+        -:   72:            allocator_ = rhs.allocator_;
+        -:   73:            ownAllocator_ = rhs.ownAllocator_;
+        -:   74:            stack_ = rhs.stack_;
+        -:   75:            stackTop_ = rhs.stackTop_;
+        -:   76:            stackEnd_ = rhs.stackEnd_;
+        -:   77:            initialCapacity_ = rhs.initialCapacity_;
+        -:   78:
+        -:   79:            rhs.allocator_ = 0;
+        -:   80:            rhs.ownAllocator_ = 0;
+        -:   81:            rhs.stack_ = 0;
+        -:   82:            rhs.stackTop_ = 0;
+        -:   83:            rhs.stackEnd_ = 0;
+        -:   84:            rhs.initialCapacity_ = 0;
+        -:   85:        }
+        -:   86:        return *this;
+        -:   87:    }
+        -:   88:#endif
+        -:   89:
+        -:   90:    void Swap(Stack& rhs) RAPIDJSON_NOEXCEPT {
+        -:   91:        internal::Swap(allocator_, rhs.allocator_);
+        -:   92:        internal::Swap(ownAllocator_, rhs.ownAllocator_);
+        -:   93:        internal::Swap(stack_, rhs.stack_);
+        -:   94:        internal::Swap(stackTop_, rhs.stackTop_);
+        -:   95:        internal::Swap(stackEnd_, rhs.stackEnd_);
+        -:   96:        internal::Swap(initialCapacity_, rhs.initialCapacity_);
+        -:   97:    }
+        -:   98:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE5ClearEv called 10 returned 100% blocks executed 100%
+       10:   99:    void Clear() { stackTop_ = stack_; }
+        -:  100:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE11ShrinkToFitEv called 5 returned 100% blocks executed 71%
+        5:  101:    void ShrinkToFit() { 
+        5:  102:        if (Empty()) {
+        5:  102-block  0
+call    0 returned 5
+branch  1 taken 5 (fallthrough)
+branch  2 taken 0
+        -:  103:            // If the stack is empty, completely deallocate the memory.
+        5:  104:            Allocator::Free(stack_); // NOLINT (+clang-analyzer-unix.Malloc)
+        5:  104-block  0
+call    0 returned 5
+        5:  105:            stack_ = 0;
+        5:  106:            stackTop_ = 0;
+        5:  107:            stackEnd_ = 0;
+        -:  108:        }
+        -:  109:        else
+    #####:  110:            Resize(GetSize());
+    %%%%%:  110-block  0
+call    0 never executed
+call    1 never executed
+        5:  111:    }
+        -:  112:
+        -:  113:    // Optimization note: try to minimize the size of this function for force inline.
+        -:  114:    // Expansion is run very infrequently, so it is moved to another (probably non-inline) function.
+        -:  115:    template<typename T>
+   256994:  116:    RAPIDJSON_FORCEINLINE void Reserve(size_t count = 1) {
+        -:  117:         // Expand the stack if needed
+   256994:  118:        if (RAPIDJSON_UNLIKELY(static_cast<std::ptrdiff_t>(sizeof(T) * count) > (stackEnd_ - stackTop_)))
+       50:  119:            Expand<T>(count);
+   256994:  120:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE7ReserveIcEEvm:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE7ReserveIcEEvm called 240101 returned 100% blocks executed 100%
+   240101:  116:    RAPIDJSON_FORCEINLINE void Reserve(size_t count = 1) {
+        -:  117:         // Expand the stack if needed
+   240101:  118:        if (RAPIDJSON_UNLIKELY(static_cast<std::ptrdiff_t>(sizeof(T) * count) > (stackEnd_ - stackTop_)))
+   240101:  118-block  0
+branch  0 taken 37 (fallthrough)
+branch  1 taken 240064
+       37:  119:            Expand<T>(count);
+       37:  119-block  0
+call    0 returned 37
+   240101:  120:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE7ReserveINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEvm:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE7ReserveINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEvm called 16893 returned 100% blocks executed 100%
+    16893:  116:    RAPIDJSON_FORCEINLINE void Reserve(size_t count = 1) {
+        -:  117:         // Expand the stack if needed
+    16893:  118:        if (RAPIDJSON_UNLIKELY(static_cast<std::ptrdiff_t>(sizeof(T) * count) > (stackEnd_ - stackTop_)))
+    16893:  118-block  0
+branch  0 taken 13 (fallthrough)
+branch  1 taken 16880
+       13:  119:            Expand<T>(count);
+       13:  119-block  0
+call    0 returned 13
+    16893:  120:    }
+------------------
+        -:  121:
+        -:  122:    template<typename T>
+   256994:  123:    RAPIDJSON_FORCEINLINE T* Push(size_t count = 1) {
+   256994:  124:        Reserve<T>(count);
+   256994:  125:        return PushUnsafe<T>(count);
+        -:  126:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE4PushIcEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE4PushIcEEPT_m called 240101 returned 100% blocks executed 100%
+   240101:  123:    RAPIDJSON_FORCEINLINE T* Push(size_t count = 1) {
+   240101:  124:        Reserve<T>(count);
+   240101:  124-block  0
+call    0 returned 240101
+   240101:  125:        return PushUnsafe<T>(count);
+call    0 returned 240101
+        -:  126:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE4PushINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE4PushINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m called 16893 returned 100% blocks executed 100%
+    16893:  123:    RAPIDJSON_FORCEINLINE T* Push(size_t count = 1) {
+    16893:  124:        Reserve<T>(count);
+    16893:  124-block  0
+call    0 returned 16893
+    16893:  125:        return PushUnsafe<T>(count);
+call    0 returned 16893
+        -:  126:    }
+------------------
+        -:  127:
+        -:  128:    template<typename T>
+   256994:  129:    RAPIDJSON_FORCEINLINE T* PushUnsafe(size_t count = 1) {
+  256994*:  130:        RAPIDJSON_ASSERT(stackTop_);
+  256994*:  131:        RAPIDJSON_ASSERT(static_cast<std::ptrdiff_t>(sizeof(T) * count) <= (stackEnd_ - stackTop_));
+   256994:  132:        T* ret = reinterpret_cast<T*>(stackTop_);
+   256994:  133:        stackTop_ += sizeof(T) * count;
+   256994:  134:        return ret;
+        -:  135:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE10PushUnsafeIcEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE10PushUnsafeIcEEPT_m called 240101 returned 100% blocks executed 67%
+   240101:  129:    RAPIDJSON_FORCEINLINE T* PushUnsafe(size_t count = 1) {
+  240101*:  130:        RAPIDJSON_ASSERT(stackTop_);
+   240101:  130-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 240101
+    %%%%%:  130-block  1
+call    2 never executed
+  240101*:  131:        RAPIDJSON_ASSERT(static_cast<std::ptrdiff_t>(sizeof(T) * count) <= (stackEnd_ - stackTop_));
+   240101:  131-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 240101
+    %%%%%:  131-block  1
+call    2 never executed
+   240101:  132:        T* ret = reinterpret_cast<T*>(stackTop_);
+   240101:  133:        stackTop_ += sizeof(T) * count;
+   240101:  134:        return ret;
+   240101:  134-block  0
+        -:  135:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE10PushUnsafeINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE10PushUnsafeINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m called 16893 returned 100% blocks executed 67%
+    16893:  129:    RAPIDJSON_FORCEINLINE T* PushUnsafe(size_t count = 1) {
+   16893*:  130:        RAPIDJSON_ASSERT(stackTop_);
+    16893:  130-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 16893
+    %%%%%:  130-block  1
+call    2 never executed
+   16893*:  131:        RAPIDJSON_ASSERT(static_cast<std::ptrdiff_t>(sizeof(T) * count) <= (stackEnd_ - stackTop_));
+    16893:  131-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 16893
+    %%%%%:  131-block  1
+call    2 never executed
+    16893:  132:        T* ret = reinterpret_cast<T*>(stackTop_);
+    16893:  133:        stackTop_ += sizeof(T) * count;
+    16893:  134:        return ret;
+    16893:  134-block  0
+        -:  135:    }
+------------------
+        -:  136:
+        -:  137:    template<typename T>
+    15996:  138:    T* Pop(size_t count) {
+   15996*:  139:        RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
+    15996:  140:        stackTop_ -= count * sizeof(T);
+    15996:  141:        return reinterpret_cast<T*>(stackTop_);
+        -:  142:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3PopIcEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3PopIcEEPT_m called 12824 returned 100% blocks executed 80%
+    12824:  138:    T* Pop(size_t count) {
+   12824*:  139:        RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
+    12824:  139-block  0
+call    0 returned 12824
+branch  1 taken 0 (fallthrough)
+branch  2 taken 12824
+    %%%%%:  139-block  1
+call    3 never executed
+    12824:  140:        stackTop_ -= count * sizeof(T);
+    12824:  141:        return reinterpret_cast<T*>(stackTop_);
+    12824:  141-block  0
+        -:  142:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3PopINS_13GenericMemberINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3PopINS_13GenericMemberINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m called 1821 returned 100% blocks executed 80%
+     1821:  138:    T* Pop(size_t count) {
+    1821*:  139:        RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
+     1821:  139-block  0
+call    0 returned 1821
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1821
+    %%%%%:  139-block  1
+call    3 never executed
+     1821:  140:        stackTop_ -= count * sizeof(T);
+     1821:  141:        return reinterpret_cast<T*>(stackTop_);
+     1821:  141-block  0
+        -:  142:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3PopINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3PopINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_m called 1351 returned 100% blocks executed 80%
+     1351:  138:    T* Pop(size_t count) {
+    1351*:  139:        RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
+     1351:  139-block  0
+call    0 returned 1351
+branch  1 taken 0 (fallthrough)
+branch  2 taken 1351
+    %%%%%:  139-block  1
+call    3 never executed
+     1351:  140:        stackTop_ -= count * sizeof(T);
+     1351:  141:        return reinterpret_cast<T*>(stackTop_);
+     1351:  141-block  0
+        -:  142:    }
+------------------
+        -:  143:
+        -:  144:    template<typename T>
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE3TopINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEPT_v called 3167 returned 100% blocks executed 80%
+     3167:  145:    T* Top() { 
+    3167*:  146:        RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
+     3167:  146-block  0
+call    0 returned 3167
+branch  1 taken 0 (fallthrough)
+branch  2 taken 3167
+    %%%%%:  146-block  1
+call    3 never executed
+     3167:  147:        return reinterpret_cast<T*>(stackTop_ - sizeof(T));
+     3167:  147-block  0
+        -:  148:    }
+        -:  149:
+        -:  150:    template<typename T>
+        -:  151:    const T* Top() const {
+        -:  152:        RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
+        -:  153:        return reinterpret_cast<T*>(stackTop_ - sizeof(T));
+        -:  154:    }
+        -:  155:
+        -:  156:    template<typename T>
+        -:  157:    T* End() { return reinterpret_cast<T*>(stackTop_); }
+        -:  158:
+        -:  159:    template<typename T>
+        -:  160:    const T* End() const { return reinterpret_cast<T*>(stackTop_); }
+        -:  161:
+        -:  162:    template<typename T>
+        -:  163:    T* Bottom() { return reinterpret_cast<T*>(stack_); }
+        -:  164:
+        -:  165:    template<typename T>
+        -:  166:    const T* Bottom() const { return reinterpret_cast<T*>(stack_); }
+        -:  167:
+function _ZNK9rapidjson8internal5StackINS_12CrtAllocatorEE12HasAllocatorEv called 5 returned 100% blocks executed 100%
+        5:  168:    bool HasAllocator() const {
+        5:  169:        return allocator_ != 0;
+        5:  169-block  0
+        -:  170:    }
+        -:  171:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE12GetAllocatorEv called 0 returned 0% blocks executed 0%
+    #####:  172:    Allocator& GetAllocator() {
+    #####:  173:        RAPIDJSON_ASSERT(allocator_);
+    %%%%%:  173-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:  173-block  1
+call    2 never executed
+    #####:  174:        return *allocator_;
+    %%%%%:  174-block  0
+        -:  175:    }
+        -:  176:
+function _ZNK9rapidjson8internal5StackINS_12CrtAllocatorEE5EmptyEv called 5 returned 100% blocks executed 100%
+        5:  177:    bool Empty() const { return stackTop_ == stack_; }
+        5:  177-block  0
+function _ZNK9rapidjson8internal5StackINS_12CrtAllocatorEE7GetSizeEv called 19268 returned 100% blocks executed 100%
+    19268:  178:    size_t GetSize() const { return static_cast<size_t>(stackTop_ - stack_); }
+    19268:  178-block  0
+function _ZNK9rapidjson8internal5StackINS_12CrtAllocatorEE11GetCapacityEv called 90 returned 100% blocks executed 100%
+       90:  179:    size_t GetCapacity() const { return static_cast<size_t>(stackEnd_ - stack_); }
+       90:  179-block  0
+        -:  180:
+        -:  181:private:
+        -:  182:    template<typename T>
+       50:  183:    void Expand(size_t count) {
+        -:  184:        // Only expand the capacity if the current stack exists. Otherwise just create a stack with initial capacity.
+        -:  185:        size_t newCapacity;
+       50:  186:        if (stack_ == 0) {
+       10:  187:            if (!allocator_)
+       10:  188:                ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator)();
+       10:  189:            newCapacity = initialCapacity_;
+        -:  190:        } else {
+       40:  191:            newCapacity = GetCapacity();
+       40:  192:            newCapacity += (newCapacity + 1) / 2;
+        -:  193:        }
+       50:  194:        size_t newSize = GetSize() + sizeof(T) * count;
+       50:  195:        if (newCapacity < newSize)
+    #####:  196:            newCapacity = newSize;
+        -:  197:
+       50:  198:        Resize(newCapacity);
+       50:  199:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE6ExpandIcEEvm:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE6ExpandIcEEvm called 37 returned 100% blocks executed 92%
+       37:  183:    void Expand(size_t count) {
+        -:  184:        // Only expand the capacity if the current stack exists. Otherwise just create a stack with initial capacity.
+        -:  185:        size_t newCapacity;
+       37:  186:        if (stack_ == 0) {
+       37:  186-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 32
+        5:  187:            if (!allocator_)
+        5:  187-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 0
+        5:  188:                ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator)();
+        5:  188-block  0
+call    0 returned 5
+        5:  189:            newCapacity = initialCapacity_;
+        5:  189-block  0
+        -:  190:        } else {
+       32:  191:            newCapacity = GetCapacity();
+       32:  191-block  0
+call    0 returned 32
+       32:  192:            newCapacity += (newCapacity + 1) / 2;
+        -:  193:        }
+       37:  194:        size_t newSize = GetSize() + sizeof(T) * count;
+       37:  194-block  0
+call    0 returned 37
+       37:  195:        if (newCapacity < newSize)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 37
+    #####:  196:            newCapacity = newSize;
+    %%%%%:  196-block  0
+        -:  197:
+       37:  198:        Resize(newCapacity);
+       37:  198-block  0
+call    0 returned 37
+       37:  199:    }
+------------------
+_ZN9rapidjson8internal5StackINS_12CrtAllocatorEE6ExpandINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEvm:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE6ExpandINS_12GenericValueINS_4UTF8IcEENS_19MemoryPoolAllocatorIS2_EEEEEEvm called 13 returned 100% blocks executed 92%
+       13:  183:    void Expand(size_t count) {
+        -:  184:        // Only expand the capacity if the current stack exists. Otherwise just create a stack with initial capacity.
+        -:  185:        size_t newCapacity;
+       13:  186:        if (stack_ == 0) {
+       13:  186-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 8
+        5:  187:            if (!allocator_)
+        5:  187-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 0
+        5:  188:                ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator)();
+        5:  188-block  0
+call    0 returned 5
+        5:  189:            newCapacity = initialCapacity_;
+        5:  189-block  0
+        -:  190:        } else {
+        8:  191:            newCapacity = GetCapacity();
+        8:  191-block  0
+call    0 returned 8
+        8:  192:            newCapacity += (newCapacity + 1) / 2;
+        -:  193:        }
+       13:  194:        size_t newSize = GetSize() + sizeof(T) * count;
+       13:  194-block  0
+call    0 returned 13
+       13:  195:        if (newCapacity < newSize)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 13
+    #####:  196:            newCapacity = newSize;
+    %%%%%:  196-block  0
+        -:  197:
+       13:  198:        Resize(newCapacity);
+       13:  198-block  0
+call    0 returned 13
+       13:  199:    }
+------------------
+        -:  200:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE6ResizeEm called 50 returned 100% blocks executed 100%
+       50:  201:    void Resize(size_t newCapacity) {
+       50:  202:        const size_t size = GetSize();  // Backup the current size
+       50:  202-block  0
+call    0 returned 50
+       50:  203:        stack_ = static_cast<char*>(allocator_->Realloc(stack_, GetCapacity(), newCapacity));
+call    0 returned 50
+call    1 returned 50
+       50:  204:        stackTop_ = stack_ + size;
+       50:  205:        stackEnd_ = stack_ + newCapacity;
+       50:  206:    }
+        -:  207:
+function _ZN9rapidjson8internal5StackINS_12CrtAllocatorEE7DestroyEv called 10 returned 100% blocks executed 100%
+       10:  208:    void Destroy() {
+       10:  209:        Allocator::Free(stack_);
+       10:  209-block  0
+call    0 returned 10
+       10:  210:        RAPIDJSON_DELETE(ownAllocator_); // Only delete if it is owned by the stack
+branch  0 taken 10 (fallthrough)
+branch  1 taken 0
+       10:  210-block  0
+call    2 returned 10
+       10:  211:    }
+        -:  212:
+        -:  213:    // Prohibit copy constructor & assignment operator.
+        -:  214:    Stack(const Stack&);
+        -:  215:    Stack& operator=(const Stack&);
+        -:  216:
+        -:  217:    Allocator* allocator_;
+        -:  218:    Allocator* ownAllocator_;
+        -:  219:    char *stack_;
+        -:  220:    char *stackTop_;
+        -:  221:    char *stackEnd_;
+        -:  222:    size_t initialCapacity_;
+        -:  223:};
+        -:  224:
+        -:  225:} // namespace internal
+        -:  226:RAPIDJSON_NAMESPACE_END
+        -:  227:
+        -:  228:#if defined(__clang__)
+        -:  229:RAPIDJSON_DIAG_POP
+        -:  230:#endif
+        -:  231:
+        -:  232:#endif // RAPIDJSON_STACK_H_

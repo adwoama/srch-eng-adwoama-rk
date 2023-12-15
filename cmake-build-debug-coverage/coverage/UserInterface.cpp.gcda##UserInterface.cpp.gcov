@@ -1,0 +1,718 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/UserInterface.cpp
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/UserInterface.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/UserInterface.cpp.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: * Rebecca Kuhlman
+        -:    3: * 4/6/2021
+        -:    4: * CS 2341
+        -:    5: * The User Interface class that interacts with the user and contains methods to display to the user
+        -:    6: */
+        -:    7:
+        -:    8:#include "UserInterface.h"
+        -:    9:using namespace std;
+        -:   10:
+        -:   11:/**
+        -:   12: * Creates a user interface object
+        -:   13: * @param folder given file path to get documents from
+        -:   14: */
+function _ZN13UserInterfaceC2ERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 1 returned 100% blocks executed 80%
+        1:   15:UserInterface::UserInterface(string& folder){
+        1:   15-block  0
+call    0 returned 1
+    $$$$$:   15-block  1
+call    1 never executed
+        1:   16:    this->folder = folder;
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   17:}
+        1:   17-block  0
+        -:   18:
+        -:   19:/**
+        -:   20: * Prompts the user and receives input, and based on input calls the methods necessary
+        -:   21: */
+function _ZN13UserInterface14receiveQueriesEv called 1 returned 100% blocks executed 37%
+        1:   22:void UserInterface::receiveQueries(){
+        -:   23:    cout << "Hello and Welcome to the Seaside Csphalopod Search, for all your COVID-19 searching"
+        1:   24:            << " needs~ " << endl;
+        1:   24-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   24-block  1
+call    3 returned 1
+branch  4 taken 1 (fallthrough)
+branch  5 taken 0 (throw)
+        1:   24-block  2
+call    6 returned 1
+branch  7 taken 1 (fallthrough)
+branch  8 taken 0 (throw)
+        -:   25:    int userInput;
+        1:   26:    bool go = true;
+        2:   27:    Runner process;
+        1:   27-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   27-block  1
+call    3 returned 1
+    $$$$$:   27-block  2
+call    4 never executed
+        4:   28:    while(go){
+        4:   28-block  0
+branch  0 taken 3 (fallthrough)
+branch  1 taken 1
+        3:   29:        cout << "Enter the following number for the corresponding command"
+        3:   29-block  0
+call    0 returned 3
+branch  1 taken 3 (fallthrough)
+branch  2 taken 0 (throw)
+        3:   30:             << endl << "1 - Enter a Query" << endl << "2 - Parse and Populate Index" << endl <<
+        3:   30-block  0
+call    0 returned 3
+branch  1 taken 3 (fallthrough)
+branch  2 taken 0 (throw)
+        3:   30-block  1
+call    3 returned 3
+branch  4 taken 3 (fallthrough)
+branch  5 taken 0 (throw)
+        3:   30-block  2
+call    6 returned 3
+branch  7 taken 3 (fallthrough)
+branch  8 taken 0 (throw)
+        3:   30-block  3
+call    9 returned 3
+branch 10 taken 3 (fallthrough)
+branch 11 taken 0 (throw)
+        3:   30-block  4
+call   12 returned 3
+branch 13 taken 3 (fallthrough)
+branch 14 taken 0 (throw)
+        3:   31:             "3 - Clear Index" << endl << "4 - Print Search Statistics " << endl << "0 - Quit";
+        3:   31-block  0
+call    0 returned 3
+branch  1 taken 3 (fallthrough)
+branch  2 taken 0 (throw)
+        3:   31-block  1
+call    3 returned 3
+branch  4 taken 3 (fallthrough)
+branch  5 taken 0 (throw)
+        3:   31-block  2
+call    6 returned 3
+branch  7 taken 3 (fallthrough)
+branch  8 taken 0 (throw)
+        3:   31-block  3
+call    9 returned 3
+branch 10 taken 3 (fallthrough)
+branch 11 taken 0 (throw)
+        3:   31-block  4
+call   12 returned 3
+branch 13 taken 3 (fallthrough)
+branch 14 taken 0 (throw)
+        3:   32:        cin >> userInput;
+        3:   32-block  0
+call    0 returned 3
+branch  1 taken 3 (fallthrough)
+branch  2 taken 0 (throw)
+        -:   33:
+        6:   34:        DSAVLTree<string, string, int> keys = process.getKeyWords();
+        3:   34-block  0
+call    0 returned 3
+branch  1 taken 3 (fallthrough)
+branch  2 taken 0 (throw)
+        3:   34-block  1
+call    3 returned 3
+        3:   34-block  2
+call    4 returned 3
+    $$$$$:   34-block  3
+call    5 never executed
+        3:   35:        if(userInput == 1){
+branch  0 taken 0 (fallthrough)
+branch  1 taken 3
+    #####:   36:            if(keys.getRoot() == nullptr){
+    %%%%%:   36-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   37:                cout << "setting up index..." << endl;
+    %%%%%:   37-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   37-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   38:                process.MakeDocList(folder);
+    %%%%%:   38-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   39:                cout << "Index populated" << endl;
+    %%%%%:   39-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   39-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:   40:            }
+        -:   41:            char query[50];
+    #####:   42:            string newQ;
+    %%%%%:   42-block  0
+call    0 never executed
+    %%%%%:   42-block  1
+call    1 never executed
+    $$$$$:   42-block  2
+call    2 never executed
+    #####:   43:            int yn = 2;
+    #####:   44:            while(yn == 2){
+    %%%%%:   44-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:   44-block  1
+    #####:   45:                cout << "Enter a Query: " << endl;
+    %%%%%:   45-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   45-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   46:                cin >> newQ;
+    %%%%%:   46-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   47:                cin.getline(query, 50);
+    %%%%%:   47-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   48:                cout << "Was that query entered correctly? (1 for yes, 2 for no)" << endl;
+    %%%%%:   48-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   48-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   49:                cin >> yn;
+    %%%%%:   49-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:   50:            }
+    #####:   51:            newQ = newQ + query;
+    %%%%%:   51-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   51-block  1
+call    3 never executed
+call    4 never executed
+    #####:   52:            process.getInput(newQ);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:   53:        }
+        3:   54:        else if(userInput == 2){
+        3:   54-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 2
+        1:   55:            cout << "setting up index..." << endl;
+        1:   55-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   55-block  1
+call    3 returned 1
+branch  4 taken 1 (fallthrough)
+branch  5 taken 0 (throw)
+        1:   56:            process.MakeDocList(folder);
+        1:   56-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   57:            cout << "Index populated" << endl;
+        1:   57-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   57-block  1
+call    3 returned 1
+branch  4 taken 1 (fallthrough)
+branch  5 taken 0 (throw)
+        -:   58:        }
+        2:   59:        else if(userInput == 3){
+        2:   59-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 1
+        1:   60:            cout << "clearing index..." << endl;
+        1:   60-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   60-block  1
+call    3 returned 1
+branch  4 taken 1 (fallthrough)
+branch  5 taken 0 (throw)
+        1:   61:            process.clearIndex();
+        1:   61-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   62:            cout << "Index cleared" << endl;
+        1:   62-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   62-block  1
+call    3 returned 1
+branch  4 taken 1 (fallthrough)
+branch  5 taken 0 (throw)
+        -:   63:        }
+        1:   64:        else if(userInput == 4){
+        1:   64-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+    #####:   65:            if(keys.getRoot() == nullptr){
+    %%%%%:   65-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   66:                cout << "setting up index..." << endl;
+    %%%%%:   66-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   66-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   67:                process.MakeDocList(folder);
+    %%%%%:   67-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   68:                cout << "Index populated" << endl;
+    %%%%%:   68-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   68-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   69:                keys = process.getKeyWords();
+    %%%%%:   69-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   69-block  1
+        -:   70:            }
+    #####:   71:            DSHashTable<string,string> authors = process.getAuthors();
+    %%%%%:   71-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   71-block  1
+call    3 never executed
+    %%%%%:   71-block  2
+call    4 never executed
+    $$$$$:   71-block  3
+call    5 never executed
+    #####:   72:            cout << "Total number of individual articles indexed: " << process.getNumDocuments() << endl;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   72-block  0
+call    3 never executed
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:   72-block  1
+call    7 never executed
+branch  8 never executed
+branch  9 never executed
+    #####:   73:            cout << "Average number of words indexed per article (after removal of stop words): " << process.getAvgWordCount() << endl;
+    %%%%%:   73-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   73-block  1
+call    3 never executed
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:   73-block  2
+call    7 never executed
+branch  8 never executed
+branch  9 never executed
+    #####:   74:            cout << "Total number of unique words indexed (after stop word removal): " << keys.getSize() << endl;
+    %%%%%:   74-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   74-block  1
+call    3 never executed
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:   74-block  2
+call    7 never executed
+branch  8 never executed
+branch  9 never executed
+    #####:   75:            cout << "Total number of unique Authors: " << authors.getSize() << endl;
+    %%%%%:   75-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   75-block  1
+call    3 never executed
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:   75-block  2
+call    7 never executed
+branch  8 never executed
+branch  9 never executed
+    #####:   76:            cout << "Top 50 most frequent words (after removal of stop words): " << endl;
+    %%%%%:   76-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   76-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   77:            getFreqWords(keys);
+    %%%%%:   77-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:   78:        }
+        1:   79:        else if(userInput == 0)
+        1:   79-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 0
+        1:   80:            go = false;
+        1:   80-block  0
+        -:   81:    }
+        1:   82:}
+        -:   83:
+        -:   84:/**
+        -:   85: * Executes Top 50 most frequent words
+        -:   86: * @param keys AVL Tree to find words in
+        -:   87: */
+function _ZN13UserInterface12getFreqWordsER9DSAVLTreeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES6_iE called 0 returned 0% blocks executed 0%
+    #####:   88:void UserInterface::getFreqWords(DSAVLTree<string, string, int>& keys){
+    #####:   89:    vector<pair<string, int>> freqs;
+    %%%%%:   89-block  0
+call    0 never executed
+    %%%%%:   89-block  1
+call    1 never executed
+    $$$$$:   89-block  2
+call    2 never executed
+    #####:   90:    DSTreeNode<string,string,int>* root = keys.getRoot();
+call    0 never executed
+    #####:   91:    int min = -1;
+    #####:   92:    getFreqWords(freqs, root, min);
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   93:    sortFreqs(freqs);
+    %%%%%:   93-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   94:    int countDown = 50;
+    #####:   95:    for(pair<string, int> print : freqs){
+    %%%%%:   95-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:   95-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:   95-block  2
+call    5 never executed
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+call    9 never executed
+    $$$$$:   95-block  3
+call   10 never executed
+    #####:   96:        cout << countDown << ": " << print.first << endl;
+    %%%%%:   96-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   96-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:   96-block  2
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:   96-block  3
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    #####:   97:        countDown--;
+    %%%%%:   97-block  0
+call    0 never executed
+        -:   98:    }
+    #####:   99:    cout << endl;
+    %%%%%:   99-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  100:}
+        -:  101:
+        -:  102:/**
+        -:  103: * Helper method that fills out the top 50 vector
+        -:  104: * @param freqs vector to fill out
+        -:  105: * @param node place in the AVL that is currently being checked
+        -:  106: * @param minIndex Index of the current minimum value in the vector
+        -:  107: */
+function _ZN13UserInterface12getFreqWordsERSt6vectorISt4pairINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEiESaIS8_EEP10DSTreeNodeIS7_S7_iERi called 0 returned 0% blocks executed 0%
+    #####:  108:void UserInterface::getFreqWords(vector<pair<string, int>>& freqs, DSTreeNode<string,string,int>* node, int& minIndex){
+    #####:  109:    if(node == nullptr)
+    %%%%%:  109-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  110:        return;
+    %%%%%:  110-block  0
+    #####:  111:    vector<int> checks = node->getRankings();
+    %%%%%:  111-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  111-block  1
+call    3 never executed
+    $$$$$:  111-block  2
+call    4 never executed
+    #####:  112:    int sum = 0;
+    #####:  113:    for(int num : checks)
+    %%%%%:  113-block  0
+call    0 never executed
+call    1 never executed
+    %%%%%:  113-block  1
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  113-block  2
+call    5 never executed
+    #####:  114:        sum += num;
+call    0 never executed
+    #####:  115:    if(minIndex == -1){
+    %%%%%:  115-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  116:        freqs.push_back(make_pair(node->getKey(), sum));
+    %%%%%:  116-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  116-block  1
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:  116-block  2
+call    7 never executed
+    $$$$$:  116-block  3
+call    8 never executed
+    $$$$$:  116-block  4
+    #####:  117:        minIndex = 0;
+        -:  118:    }
+        -:  119:    else{
+    #####:  120:        pair<string, int> minPair = freqs.at(minIndex);
+    %%%%%:  120-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  120-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  120-block  2
+call    6 never executed
+    $$$$$:  120-block  3
+call    7 never executed
+    #####:  121:        if(freqs.size() < 50){
+    %%%%%:  121-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  122:            freqs.push_back(make_pair(node->getKey(), sum));
+    %%%%%:  122-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  122-block  1
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:  122-block  2
+call    7 never executed
+    $$$$$:  122-block  3
+call    8 never executed
+    $$$$$:  122-block  4
+    #####:  123:            if(minPair.second > sum)
+branch  0 never executed
+branch  1 never executed
+    #####:  124:                minIndex = freqs.size() - 1;
+    %%%%%:  124-block  0
+call    0 never executed
+        -:  125:        }
+    #####:  126:        else if(sum > minPair.second){
+    %%%%%:  126-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  127:            int newMin = sum;
+    #####:  128:            int newMinIndex = -1;
+    #####:  129:            for(int index = 0; index < freqs.size(); index++){
+    %%%%%:  129-block  0
+    %%%%%:  129-block  1
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  130:                pair<string, int> check = freqs.at(index);
+    %%%%%:  130-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  130-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:  130-block  2
+call    6 never executed
+    $$$$$:  130-block  3
+call    7 never executed
+    #####:  131:                if(index == minIndex){
+    %%%%%:  131-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  132:                    freqs.at(index) = make_pair(node->getKey(), sum);
+    %%%%%:  132-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  132-block  1
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:  132-block  2
+call    7 never executed
+call    8 never executed
+    $$$$$:  132-block  3
+call    9 never executed
+    $$$$$:  132-block  4
+    #####:  133:                    if(newMinIndex == -1)
+branch  0 never executed
+branch  1 never executed
+    #####:  134:                        newMinIndex = index;
+    %%%%%:  134-block  0
+        -:  135:                }
+    #####:  136:                else if(check.second < newMin){
+    %%%%%:  136-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  137:                    newMin = check.second;
+    #####:  138:                    newMinIndex = index;
+    %%%%%:  138-block  0
+        -:  139:                }
+        -:  140:            }
+    #####:  141:            minIndex = newMinIndex;
+    %%%%%:  141-block  0
+        -:  142:        }
+        -:  143:    }
+    #####:  144:    getFreqWords(freqs, node->getRight(), minIndex);
+    %%%%%:  144-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  145:    getFreqWords(freqs, node->getLeft(), minIndex);
+    %%%%%:  145-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+        -:  146:}
+        -:  147:
+        -:  148:    /**
+        -:  149:     * Sorts vector in ascending order (Selection Sort)
+        -:  150:     */
+function _ZN13UserInterface9sortFreqsERSt6vectorISt4pairINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEiESaIS8_EE called 0 returned 0% blocks executed 0%
+    #####:  151:    void UserInterface::sortFreqs(vector<pair<string, int>>& freqs){
+        -:  152:        int smallest;
+    #####:  153:        for(int index = 0; index < freqs.size() - 1; index++){
+    %%%%%:  153-block  0
+    %%%%%:  153-block  1
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  154:            smallest = index;
+    #####:  155:            for(int i = index + 1; i < freqs.size(); i++){
+    %%%%%:  155-block  0
+    %%%%%:  155-block  1
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  155-block  2
+    #####:  156:                if(freqs[i].second < freqs[smallest].second)
+    %%%%%:  156-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  157:                    smallest = i;
+    %%%%%:  157-block  0
+        -:  158:            }
+    #####:  159:            sortHelper(&freqs[smallest], &freqs[index]);
+    %%%%%:  159-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+        -:  160:        }
+    #####:  161:    }
+        -:  162:
+        -:  163:    /**
+        -:  164:     * Helper method to sortFreqs that swaps elements
+        -:  165:     * @param str1ptr - 1st element to be swapped
+        -:  166:     * @param str2ptr - 2nd element to be swapped
+        -:  167:     */
+function _ZN13UserInterface10sortHelperEPSt4pairINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEiES8_ called 0 returned 0% blocks executed 0%
+    #####:  168:    void UserInterface::sortHelper(pair<string, int> *str1ptr, pair<string, int> *str2ptr)
+        -:  169:    {
+    #####:  170:        pair<string, int> temp = *str1ptr;
+    %%%%%:  170-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:  170-block  1
+call    3 never executed
+    $$$$$:  170-block  2
+call    4 never executed
+    #####:  171:        *str1ptr = *str2ptr;
+    %%%%%:  171-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  172:        *str2ptr = temp;
+    %%%%%:  172-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  173:    }

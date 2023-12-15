@@ -1,0 +1,376 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/DSHashTable.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: * Rebecca Kuhlman
+        -:    3: * 4/6/2021
+        -:    4: * CS 2341
+        -:    5: * DSList header class that defines variables and functions to create
+        -:    6: * a linked list class with specific functionality
+        -:    7: */
+        -:    8:#ifndef AVL_DSHASHTABLE_H
+        -:    9:#define AVL_DSHASHTABLE_H
+        -:   10:
+        -:   11:#include <iostream>
+        -:   12:#include <set>
+        -:   13:#include <vector>
+        -:   14:#include <list>
+        -:   15:#include <algorithm>
+        -:   16:
+        -:   17:#define DEBUG true
+        -:   18:
+        -:   19:template<class T, class B>
+        -:   20:class DSHashTable {
+        -:   21:private:
+        -:   22:    struct Entry{
+        -:   23:        T key;
+        -:   24:        set<B> value;
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_E5EntryC2ES5_St3setIS5_St4lessIS5_ESaIS5_EE called 43 returned 100% blocks executed 80%
+       43:   25:        Entry(T t, set<B> b):key(t), value(b){}
+       43:   25-block  0
+call    0 returned 43
+call    1 returned 43
+branch  2 taken 43 (fallthrough)
+branch  3 taken 0 (throw)
+       43:   25-block  1
+    $$$$$:   25-block  2
+call    4 never executed
+        -:   26:    };
+        -:   27:
+        -:   28:    int capacity;
+        -:   29:    int size;
+        -:   30:    vector<Entry>* table = nullptr;
+        -:   31:
+        -:   32:public:
+        -:   33:    DSHashTable();
+        -:   34:    DSHashTable(const DSHashTable<T, B>&);
+        -:   35:    ~DSHashTable();
+        -:   36:    void clear();
+        -:   37:    void rehash();
+        -:   38:    void insert(const T& key, const set<B>& value);
+        -:   39:    void insert(const T& key, const B& value);
+        -:   40:    set<B>& get(const T&);
+        -:   41:    bool contains(const T&);
+        -:   42:    int getSize();
+        -:   43:};
+        -:   44:
+        -:   45:
+        -:   46:#endif //AVL_DSHASHTABLE_H
+        -:   47:
+        -:   48:/**
+        -:   49: * Creates a hash table object
+        -:   50: */
+        -:   51:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_EC2Ev called 1 returned 100% blocks executed 89%
+        1:   52:DSHashTable<T, B>::DSHashTable(){
+        1:   53:    size = 0;
+        1:   54:    capacity = 100;
+     101*:   55:    table = new vector<Entry>[capacity];
+        1:   55-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 0
+        1:   55-block  1
+    %%%%%:   55-block  2
+        1:   55-block  3
+call    2 returned 1
+      101:   55-block  4
+branch  3 taken 100 (fallthrough)
+branch  4 taken 1
+      100:   55-block  5
+call    5 returned 100
+        1:   56:}
+        -:   57:
+        -:   58:/**
+        -:   59: * Copies given table to new hash table object
+        -:   60: * @param newTable table to copy
+        -:   61: */
+        -:   62:template<class T, class B>
+        -:   63:DSHashTable<T, B>::DSHashTable(const DSHashTable<T, B>& newTable){
+        -:   64:    table = newTable.table;
+        -:   65:    capacity = newTable.capacity;
+        -:   66:    size = newTable.size;
+        -:   67:}
+        -:   68:
+        -:   69://Destructor
+        -:   70:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_ED2Ev called 1 returned 100% blocks executed 100%
+        1:   71:DSHashTable<T, B>::~DSHashTable(){
+        1:   72:    clear();
+        1:   72-block  0
+call    0 returned 1
+        1:   73:}
+        -:   74:
+        -:   75://Clears object of all elements and resets it
+        -:   76:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_E5clearEv called 2 returned 100% blocks executed 100%
+        2:   77:void DSHashTable<T, B>::clear(){
+      102:   78:    delete[] table;
+        2:   78-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 1
+        1:   78-block  1
+      101:   78-block  2
+branch  2 taken 100 (fallthrough)
+branch  3 taken 1
+      100:   78-block  3
+call    4 returned 100
+        1:   78-block  4
+call    5 returned 1
+        2:   79:    size = 0;
+        2:   80:    capacity = 100;
+        2:   81:    table = nullptr;
+        2:   82:}
+        -:   83:
+        -:   84:/**
+        -:   85: * Increases the capacity of the table and rehashs each element currently in the table
+        -:   86: */
+        -:   87:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_E6rehashEv called 0 returned 0% blocks executed 0%
+    #####:   88:void DSHashTable<T, B>::rehash(){
+    #####:   89:    int newCapacity = capacity * 2;
+    #####:   90:    vector<Entry>* newTable = nullptr;
+    #####:   91:    for(int index = 0; index < capacity; index++){
+    %%%%%:   91-block  0
+    %%%%%:   91-block  1
+branch  0 never executed
+branch  1 never executed
+    %%%%%:   91-block  2
+    #####:   92:        Entry checkEntry = table->at(index);
+    %%%%%:   92-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   92-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    $$$$$:   92-block  2
+call    6 never executed
+    #####:   93:        if(!checkEntry.value.empty()){
+    %%%%%:   93-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   94:            auto hash_value = std::hash<T>{}(checkEntry.key);
+    %%%%%:   94-block  0
+call    0 never executed
+    #####:   95:            int loc = hash_value % newCapacity;
+    #####:   96:            if(DEBUG) std::cout << checkEntry.key << ": " << hash_value << std::endl;
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   96-block  0
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:   96-block  1
+call    6 never executed
+branch  7 never executed
+branch  8 never executed
+    %%%%%:   96-block  2
+call    9 never executed
+branch 10 never executed
+branch 11 never executed
+    #####:   97:            newTable[loc].push_back(checkEntry);
+    %%%%%:   97-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   98:            break;
+    %%%%%:   98-block  0
+        -:   99:        }
+        -:  100:    }
+    #####:  101:    table = newTable;
+    #####:  102:}
+    %%%%%:  102-block  0
+        -:  103:
+        -:  104:/**
+        -:  105: * Inserts a new element into the table
+        -:  106: * @param key New key to add to the table
+        -:  107: * @param newValue New value to add to the table
+        -:  108: */
+        -:  109:template<class T, class B>
+        -:  110:void DSHashTable<T, B>::insert(const T& key, const set<B>& newValue){
+        -:  111:    if((size + 1) / capacity >= 1)
+        -:  112:        rehash();
+        -:  113:    Entry newEntry(key, newValue);
+        -:  114:    auto hash_value = std::hash<T>{}(key);
+        -:  115:    int loc = hash_value % capacity;
+        -:  116:    if(DEBUG) std::cout << key << ": " << hash_value << std::endl;
+        -:  117:    table[loc].push_back(newEntry);
+        -:  118:    size++;
+        -:  119:}
+        -:  120:
+        -:  121:/**
+        -:  122: * Inserts a new element into the table
+        -:  123: * @param key New key to add to the table
+        -:  124: * @param newValue New value to add to the table
+        -:  125: */
+        -:  126:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_E6insertERKS5_S8_ called 55 returned 100% blocks executed 71%
+       55:  127:void DSHashTable<T, B>::insert(const T& key, const B& newValue){
+       55:  128:    if((size + 1) / capacity >= 1)
+       55:  128-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 55
+    #####:  129:        rehash();
+    %%%%%:  129-block  0
+call    0 never executed
+       55:  130:    auto hash_value = std::hash<T>{}(key);
+       55:  130-block  0
+call    0 returned 55
+       55:  131:    int loc = hash_value % capacity;
+       55:  132:    if(DEBUG) std::cout << key << ": " << hash_value << std::endl;
+call    0 returned 55
+call    1 returned 55
+call    2 returned 55
+call    3 returned 55
+       55:  133:    bool added = false;
+       82:  134:    for(auto &check : table[loc]){
+call    0 returned 55
+call    1 returned 55
+       82:  134-block  0
+call    2 returned 82
+branch  3 taken 27 (fallthrough)
+branch  4 taken 55
+       27:  134-block  1
+call    5 returned 27
+       27:  134-block  2
+call    6 returned 27
+       27:  135:        if(check.key == key){
+call    0 returned 27
+branch  1 taken 12 (fallthrough)
+branch  2 taken 15
+       12:  136:            check.value.insert(newValue);
+       12:  136-block  0
+call    0 returned 12
+branch  1 taken 12 (fallthrough)
+branch  2 taken 0 (throw)
+       12:  137:            added = true;
+       12:  137-block  0
+        -:  138:        }
+        -:  139:    }
+       55:  140:    if(!added){
+       55:  140-block  0
+branch  0 taken 43 (fallthrough)
+branch  1 taken 12
+       86:  141:        set<B> newSet;
+       43:  141-block  0
+call    0 returned 43
+call    1 returned 43
+    $$$$$:  141-block  1
+call    2 never executed
+       43:  142:        newSet.insert(newValue);
+call    0 returned 43
+branch  1 taken 43 (fallthrough)
+branch  2 taken 0 (throw)
+      129:  143:        Entry newEntry(key, newSet);
+       43:  143-block  0
+call    0 returned 43
+branch  1 taken 43 (fallthrough)
+branch  2 taken 0 (throw)
+       43:  143-block  1
+call    3 returned 43
+branch  4 taken 43 (fallthrough)
+branch  5 taken 0 (throw)
+       43:  143-block  2
+call    6 returned 43
+branch  7 taken 43 (fallthrough)
+branch  8 taken 0 (throw)
+call    9 returned 43
+       43:  143-block  3
+call   10 returned 43
+    $$$$$:  143-block  4
+    $$$$$:  143-block  5
+    $$$$$:  143-block  6
+call   11 never executed
+       43:  144:        table[loc].push_back(newEntry);
+call    0 returned 43
+branch  1 taken 43 (fallthrough)
+branch  2 taken 0 (throw)
+        -:  145:    }
+       55:  146:    size++;
+       55:  147:}
+       55:  147-block  0
+        -:  148:
+        -:  149:/**
+        -:  150: * Gets a value from a given key
+        -:  151: * @param key key to find value with
+        -:  152: */
+        -:  153:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_E3getERKS5_ called 0 returned 0% blocks executed 0%
+    #####:  154:set<B>& DSHashTable<T, B>::get(const T& key){
+    #####:  155:    int loc = std::hash<T>{}(key) % capacity;
+    %%%%%:  155-block  0
+call    0 never executed
+    #####:  156:    for(auto &check : table[loc]){
+call    0 never executed
+call    1 never executed
+    %%%%%:  156-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  156-block  1
+call    5 never executed
+    %%%%%:  156-block  2
+call    6 never executed
+    #####:  157:        if(check.key == key)
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  158:            return check.value;
+    %%%%%:  158-block  0
+    %%%%%:  158-block  1
+        -:  159:    }
+    #####:  160:    throw std::out_of_range("Key doesn't exist");
+    %%%%%:  160-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  160-block  1
+call    4 never executed
+    $$$$$:  160-block  2
+call    5 never executed
+        -:  161:}
+        -:  162:
+        -:  163:/**
+        -:  164: * Sees if table contains key
+        -:  165: * @param key key to find
+        -:  166: * @return true if found, false otherwise
+        -:  167: */
+        -:  168:template<class T, class B>
+function _ZN11DSHashTableINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_E8containsERKS5_ called 55 returned 100% blocks executed 92%
+       55:  169:bool DSHashTable<T, B>::contains(const T& key){
+       55:  170:    int loc = std::hash<T>{}(key) % capacity;
+       55:  170-block  0
+call    0 returned 55
+       69:  171:    for(auto &check : table[loc]){
+call    0 returned 55
+call    1 returned 55
+       69:  171-block  0
+call    2 returned 69
+branch  3 taken 69 (fallthrough)
+branch  4 taken 0
+       69:  171-block  1
+call    5 returned 69
+       14:  171-block  2
+call    6 returned 14
+       69:  172:        if(check.key == key)
+call    0 returned 69
+branch  1 taken 55 (fallthrough)
+branch  2 taken 14
+       55:  173:            return true;
+       55:  173-block  0
+        -:  174:    }
+    #####:  175:    return false;
+    %%%%%:  175-block  0
+        -:  176:}
+        -:  177:
+        -:  178://returns size
+        -:  179:template<class T, class B>
+        -:  180:int DSHashTable<T, B>::getSize(){
+        -:  181:    return size;
+        -:  182:}
+        -:  183:

@@ -1,0 +1,742 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/string_view.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/porter2_stemmer.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/porter2_stemmer.cpp.gcda
+        -:    0:Runs:1
+        -:    1:/**
+        -:    2: * @file string_view.h
+        -:    3: * @author Chase Geigle
+        -:    4: *
+        -:    5: * All files in META are dual-licensed under the MIT and NCSA licenses. For more
+        -:    6: * details, consult the file LICENSE.mit and LICENSE.ncsa in the root of the
+        -:    7: * project.
+        -:    8: */
+        -:    9:
+        -:   10:#ifndef META_UTIL_STRING_VIEW_H_
+        -:   11:#define META_UTIL_STRING_VIEW_H_
+        -:   12:
+        -:   13:#include "hash.h"
+        -:   14:
+        -:   15:#if META_HAS_EXPERIMENTAL_STRING_VIEW
+        -:   16:#include <experimental/string_view>
+        -:   17:namespace meta
+        -:   18:{
+        -:   19:namespace util
+        -:   20:{
+        -:   21:template <class Char, class Traits = std::char_traits<Char>>
+        -:   22:using basic_string_view = std::experimental::basic_string_view<Char, Traits>;
+        -:   23:
+        -:   24:using string_view = basic_string_view<char>;
+        -:   25:using u16string_view = basic_string_view<char16_t>;
+        -:   26:using u32string_view = basic_string_view<char32_t>;
+        -:   27:using wstring_view = basic_string_view<wchar_t>;
+        -:   28:}
+        -:   29:}
+        -:   30:#else
+        -:   31:
+        -:   32:#include <algorithm>
+        -:   33:#include <stdexcept>
+        -:   34:#include <string>
+        -:   35:
+        -:   36:namespace meta
+        -:   37:{
+        -:   38:namespace util
+        -:   39:{
+        -:   40:
+        -:   41:/**
+        -:   42: * A non-owning reference to a string. I make no claims that this is
+        -:   43: * completely standards-compliant---this is just a best-effort attempt at
+        -:   44: * implementing what we need for MeTA. I have built this using its paper's
+        -:   45: * wording for the Fundamentals TS.
+        -:   46: *
+        -:   47: * @see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n3921.html
+        -:   48: */
+        -:   49:template <class Char, class Traits = std::char_traits<Char>>
+        -:   50:class basic_string_view
+        -:   51:{
+        -:   52:  public:
+        -:   53:    using traits_type = Traits;
+        -:   54:    using value_type = Char;
+        -:   55:    using pointer = Char*;
+        -:   56:    using const_pointer = const Char*;
+        -:   57:    using reference = Char&;
+        -:   58:    using const_reference = const Char&;
+        -:   59:    using const_iterator = const_pointer;
+        -:   60:    using iterator = const_iterator;
+        -:   61:    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        -:   62:    using reverse_iterator = const_reverse_iterator;
+        -:   63:    using size_type = std::size_t;
+        -:   64:    using difference_type = std::ptrdiff_t;
+        -:   65:    static constexpr size_type npos = size_type(-1);
+        -:   66:
+        -:   67:    constexpr basic_string_view() noexcept : data_{nullptr}, size_{0}
+        -:   68:    {
+        -:   69:        // nothing
+        -:   70:    }
+        -:   71:
+        -:   72:    constexpr basic_string_view(const basic_string_view&) noexcept = default;
+        -:   73:    basic_string_view& operator=(const basic_string_view&) noexcept = default;
+        -:   74:
+        -:   75:    template <class Allocator>
+function _ZN4meta4util17basic_string_viewIcSt11char_traitsIcEEC2ISaIcEEERKNSt7__cxx1112basic_stringIcS3_T_EE called 92054 returned 100% blocks executed 100%
+    92054:   76:    basic_string_view(
+        -:   77:        const std::basic_string<Char, Traits, Allocator>& str) noexcept
+        -:   78:        : data_{str.data()},
+    92054:   79:          size_{str.size()}
+    92054:   79-block  0
+call    0 returned 92054
+call    1 returned 92054
+        -:   80:    {
+        -:   81:        // nothing
+    92054:   82:    }
+        -:   83:
+function _ZN4meta4util17basic_string_viewIcSt11char_traitsIcEEC1EPKc called 298622 returned 100% blocks executed 100%
+   298622:   84:    constexpr basic_string_view(const Char* str)
+   298622:   85:        : data_{str}, size_{Traits::length(str)}
+   298622:   85-block  0
+call    0 returned 298622
+        -:   86:    {
+        -:   87:        // nothing
+   298622:   88:    }
+        -:   89:
+function _ZN4meta4util17basic_string_viewIcSt11char_traitsIcEEC2EPKcm called 77213 returned 100% blocks executed 100%
+    77213:   90:    constexpr basic_string_view(const Char* str, size_type len)
+    77213:   91:        : data_{str}, size_{len}
+        -:   92:    {
+        -:   93:        // nothing
+    77213:   94:    }
+        -:   95:
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE5beginEv called 211285 returned 100% blocks executed 100%
+   211285:   96:    constexpr const_iterator begin() const noexcept
+        -:   97:    {
+   211285:   98:        return data_;
+   211285:   98-block  0
+        -:   99:    }
+        -:  100:
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE3endEv called 7 returned 100% blocks executed 100%
+        7:  101:    constexpr const_iterator end() const noexcept
+        -:  102:    {
+        7:  103:        return data_ + size_;
+        7:  103-block  0
+        -:  104:    }
+        -:  105:
+        -:  106:    constexpr const_iterator cbegin() const noexcept
+        -:  107:    {
+        -:  108:        return begin();
+        -:  109:    }
+        -:  110:
+        -:  111:    constexpr const_iterator cend() const noexcept
+        -:  112:    {
+        -:  113:        return end();
+        -:  114:    }
+        -:  115:
+        -:  116:    const_reverse_iterator rbegin() const noexcept
+        -:  117:    {
+        -:  118:        return {end()};
+        -:  119:    }
+        -:  120:
+        -:  121:    const_reverse_iterator rend() const noexcept
+        -:  122:    {
+        -:  123:        return {begin()};
+        -:  124:    }
+        -:  125:
+        -:  126:    const_reverse_iterator crbegin() const noexcept
+        -:  127:    {
+        -:  128:        return rbegin();
+        -:  129:    }
+        -:  130:
+        -:  131:    const_reverse_iterator crend() const noexcept
+        -:  132:    {
+        -:  133:        return rend();
+        -:  134:    }
+        -:  135:
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE4sizeEv called 1673090 returned 100% blocks executed 100%
+  1673090:  136:    constexpr size_type size() const noexcept
+        -:  137:    {
+  1673090:  138:        return size_;
+  1673090:  138-block  0
+        -:  139:    }
+        -:  140:
+        -:  141:    constexpr size_type length() const noexcept
+        -:  142:    {
+        -:  143:        return size();
+        -:  144:    }
+        -:  145:
+        -:  146:    constexpr size_type max_size() const noexcept
+        -:  147:    {
+        -:  148:        return size();
+        -:  149:    }
+        -:  150:
+        -:  151:    constexpr bool empty() const noexcept
+        -:  152:    {
+        -:  153:        return size() == 0;
+        -:  154:    }
+        -:  155:
+        -:  156:    constexpr const_reference operator[](size_type pos) const
+        -:  157:    {
+        -:  158:        return data_[pos];
+        -:  159:    }
+        -:  160:
+        -:  161:    const_reference at(size_type pos) const
+        -:  162:    {
+        -:  163:        if (pos >= size())
+        -:  164:            throw std::out_of_range{"index out of bounds"};
+        -:  165:        return data_[pos];
+        -:  166:    }
+        -:  167:
+        -:  168:    constexpr const_reference front() const
+        -:  169:    {
+        -:  170:        return data_[0];
+        -:  171:    }
+        -:  172:
+        -:  173:    constexpr const_reference back() const
+        -:  174:    {
+        -:  175:        return data_[size_ - 1];
+        -:  176:    }
+        -:  177:
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE4dataEv called 244969 returned 100% blocks executed 100%
+   244969:  178:    constexpr const_pointer data() const noexcept
+        -:  179:    {
+   244969:  180:        return data_;
+   244969:  180-block  0
+        -:  181:    }
+        -:  182:
+        -:  183:    void clear() noexcept
+        -:  184:    {
+        -:  185:        data_ = nullptr;
+        -:  186:        size_ = 0;
+        -:  187:    }
+        -:  188:
+        -:  189:    void remove_prefix(size_type n)
+        -:  190:    {
+        -:  191:        data_ += n;
+        -:  192:        size_ -= n;
+        -:  193:    }
+        -:  194:
+        -:  195:    void remove_suffix(size_type n)
+        -:  196:    {
+        -:  197:        size_ -= n;
+        -:  198:    }
+        -:  199:
+        -:  200:    void swap(basic_string_view& s) noexcept
+        -:  201:    {
+        -:  202:        using ::std::swap;
+        -:  203:        swap(data_, s.data_);
+        -:  204:        swap(size_, s.size_);
+        -:  205:    }
+        -:  206:
+        -:  207:    template <class Allocator>
+        -:  208:    explicit operator std::basic_string<Char, Traits, Allocator>() const
+        -:  209:    {
+        -:  210:        return {begin(), end()};
+        -:  211:    }
+        -:  212:
+        -:  213:    template <class Allocator = std::allocator<Char>>
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE9to_stringISaIcEEENSt7__cxx1112basic_stringIcS3_T_EERKS9_ called 7 returned 100% blocks executed 100%
+        7:  214:    std::basic_string<Char, Traits, Allocator> to_string(const Allocator& a
+        -:  215:                                                         = Allocator{}) const
+        -:  216:    {
+        7:  217:        return {begin(), end(), a};
+        7:  217-block  0
+call    0 returned 7
+call    1 returned 7
+call    2 returned 7
+        -:  218:    }
+        -:  219:
+        -:  220:    size_type copy(Char* s, size_type n, size_type pos = 0) const
+        -:  221:    {
+        -:  222:        if (pos > size())
+        -:  223:            throw std::out_of_range{"index out of bounds"};
+        -:  224:
+        -:  225:        auto rlen = std::min(n, size() - pos);
+        -:  226:        std::copy_n(begin() + pos, rlen, s);
+        -:  227:        return rlen;
+        -:  228:    }
+        -:  229:
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE6substrEmm called 77213 returned 100% blocks executed 64%
+    77213:  230:    constexpr basic_string_view substr(size_type pos = 0,
+        -:  231:                                       size_type n = npos) const
+        -:  232:    {
+    77213:  233:        return pos > size()
+    77213:  233-block  0
+call    0 returned 77213
+    #####:  234:                   ? throw std::out_of_range{"index out of bounds"}
+    %%%%%:  234-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:  234-block  1
+call    4 never executed
+    $$$$$:  234-block  2
+call    5 never executed
+    77213:  235:                   : basic_string_view{data() + pos, std::min(n, size() - pos)};
+branch  0 taken 0 (fallthrough)
+branch  1 taken 77213
+    77213:  235-block  0
+call    2 returned 77213
+call    3 returned 77213
+call    4 returned 77213
+call    5 returned 77213
+    77213:  235-block  1
+        -:  236:    }
+        -:  237:
+function _ZNK4meta4util17basic_string_viewIcSt11char_traitsIcEE7compareES4_ called 77220 returned 100% blocks executed 89%
+    77220:  238:    int compare(basic_string_view s) const noexcept
+        -:  239:    {
+        -:  240:        auto cmp
+    77220:  241:            = Traits::compare(data(), s.data(), std::min(size(), s.size()));
+    77220:  241-block  0
+call    0 returned 77220
+call    1 returned 77220
+call    2 returned 77220
+call    3 returned 77220
+call    4 returned 77220
+call    5 returned 77220
+    77220:  242:        if (cmp != 0)
+branch  0 taken 75373 (fallthrough)
+branch  1 taken 1847
+    75373:  243:            return cmp;
+    75373:  243-block  0
+        -:  244:
+     1847:  245:        if (size() < s.size())
+     1847:  245-block  0
+call    0 returned 1847
+call    1 returned 1847
+branch  2 taken 0 (fallthrough)
+branch  3 taken 1847
+    #####:  246:            return -1;
+    %%%%%:  246-block  0
+        -:  247:
+     1847:  248:        if (size() == s.size())
+     1847:  248-block  0
+call    0 returned 1847
+call    1 returned 1847
+branch  2 taken 1847 (fallthrough)
+branch  3 taken 0
+     1847:  249:            return 0;
+     1847:  249-block  0
+        -:  250:
+    #####:  251:        return 1;
+    %%%%%:  251-block  0
+        -:  252:    }
+        -:  253:
+        -:  254:    constexpr int compare(size_type pos1, size_type n1,
+        -:  255:                          basic_string_view s) const
+        -:  256:    {
+        -:  257:        return substr(pos1, n1).compare(s);
+        -:  258:    }
+        -:  259:
+        -:  260:    constexpr int compare(size_type pos1, size_type n1, basic_string_view s,
+        -:  261:                          size_type pos2, size_type n2) const
+        -:  262:    {
+        -:  263:        return substr(pos1, n1).compare(s.substr(pos2, n2));
+        -:  264:    }
+        -:  265:
+        -:  266:    constexpr int compare(const Char* s) const
+        -:  267:    {
+        -:  268:        return compare(basic_string_view{s});
+        -:  269:    }
+        -:  270:
+        -:  271:    constexpr int compare(size_type pos1, size_type n1, const Char* s) const
+        -:  272:    {
+        -:  273:        return substr(pos1, n1).compare(basic_string_view{s});
+        -:  274:    }
+        -:  275:
+        -:  276:    constexpr int compare(size_type pos1, size_type n1, const Char* s,
+        -:  277:                          size_type n2) const
+        -:  278:    {
+        -:  279:        return substr(pos1, n1).compare(basic_string_view{s, n2});
+        -:  280:    }
+        -:  281:
+        -:  282:    size_type find(basic_string_view s, size_type pos = 0) const noexcept
+        -:  283:    {
+        -:  284:        if (pos >= size())
+        -:  285:            return npos;
+        -:  286:
+        -:  287:        auto it
+        -:  288:            = std::search(begin() + pos, end(), s.begin(), s.end(), Traits::eq);
+        -:  289:        if (it == end())
+        -:  290:            return npos;
+        -:  291:        return std::distance(begin(), it);
+        -:  292:    }
+        -:  293:
+        -:  294:    constexpr size_type find(Char c, size_type pos = 0) const noexcept
+        -:  295:    {
+        -:  296:        return find(basic_string_view{&c, 1}, pos);
+        -:  297:    }
+        -:  298:
+        -:  299:    constexpr size_type find(const Char* s, size_type pos, size_type n) const
+        -:  300:    {
+        -:  301:        return find(basic_string_view{s, n}, pos);
+        -:  302:    }
+        -:  303:
+        -:  304:    constexpr size_type find(const Char* s, size_type pos = 0) const
+        -:  305:    {
+        -:  306:        return find(basic_string_view{s}, pos);
+        -:  307:    }
+        -:  308:
+        -:  309:    size_type rfind(basic_string_view s, size_type pos = npos) const noexcept
+        -:  310:    {
+        -:  311:        if (size() < s.size())
+        -:  312:            return npos;
+        -:  313:
+        -:  314:        pos = std::min(pos, size());
+        -:  315:        if (s.size() < size() - pos)
+        -:  316:            pos += s.size();
+        -:  317:        else
+        -:  318:            pos = size();
+        -:  319:
+        -:  320:        auto it = std::find_end(begin(), begin() + pos, s.begin(), s.end(),
+        -:  321:                                Traits::eq);
+        -:  322:
+        -:  323:        if (it == begin() + pos)
+        -:  324:            return npos;
+        -:  325:        return std::distance(begin(), it);
+        -:  326:    }
+        -:  327:
+        -:  328:    constexpr size_type rfind(Char c, size_type pos = npos) const noexcept
+        -:  329:    {
+        -:  330:        return rfind(basic_string_view{&c, 1}, pos);
+        -:  331:    }
+        -:  332:
+        -:  333:    constexpr size_type rfind(const Char* s, size_type pos, size_type n) const
+        -:  334:    {
+        -:  335:        return rfind(basic_string_view{s, n}, pos);
+        -:  336:    }
+        -:  337:
+        -:  338:    constexpr size_type rfind(const Char* s, size_type pos = npos) const
+        -:  339:    {
+        -:  340:        return rfind(basic_string_view{s}, pos);
+        -:  341:    }
+        -:  342:
+        -:  343:    size_type find_first_of(basic_string_view s, size_type pos = 0) const
+        -:  344:        noexcept
+        -:  345:    {
+        -:  346:        if (pos >= size())
+        -:  347:            return npos;
+        -:  348:
+        -:  349:        auto it = std::find_first_of(begin() + pos, end(), s.begin(), s.end(),
+        -:  350:                                     Traits::eq);
+        -:  351:        if (it == end())
+        -:  352:            return npos;
+        -:  353:        return std::distance(begin(), it);
+        -:  354:    }
+        -:  355:
+        -:  356:    constexpr size_type find_first_of(Char c, size_type pos = 0) const noexcept
+        -:  357:    {
+        -:  358:        return find_first_of(basic_string_view{&c, 1}, pos);
+        -:  359:    }
+        -:  360:
+        -:  361:    constexpr size_type find_first_of(const Char* s, size_type pos,
+        -:  362:                                      size_type n) const
+        -:  363:    {
+        -:  364:        return find_first_of(basic_string_view{s, n}, pos);
+        -:  365:    }
+        -:  366:
+        -:  367:    constexpr size_type find_first_of(const Char* s, size_type pos = 0) const
+        -:  368:    {
+        -:  369:        return find_first_of(basic_string_view{s}, pos);
+        -:  370:    }
+        -:  371:
+        -:  372:    size_type find_last_of(basic_string_view s, size_type pos = npos) const
+        -:  373:        noexcept
+        -:  374:    {
+        -:  375:        if (pos >= size())
+        -:  376:            return npos;
+        -:  377:
+        -:  378:        auto diff = size() - std::min(size(), pos);
+        -:  379:        auto it = std::find_first_of(rbegin() + diff, rend(), s.begin(),
+        -:  380:                                     s.end(), Traits::eq);
+        -:  381:        if (it == rend())
+        -:  382:            return npos;
+        -:  383:        return size() - 1 - std::distance(rbegin(), it);
+        -:  384:    }
+        -:  385:
+        -:  386:    constexpr size_type find_last_of(Char c, size_type pos = npos) const
+        -:  387:        noexcept
+        -:  388:    {
+        -:  389:        return find_last_of(basic_string_view{&c, 1}, pos);
+        -:  390:    }
+        -:  391:
+        -:  392:    constexpr size_type find_last_of(const Char* s, size_type pos,
+        -:  393:                                     size_type n) const
+        -:  394:    {
+        -:  395:        return find_last_of(basic_string_view{s, n}, pos);
+        -:  396:    }
+        -:  397:
+        -:  398:    constexpr size_type find_last_of(const Char* s, size_type pos = npos) const
+        -:  399:    {
+        -:  400:        return find_last_of(basic_string_view{s}, pos);
+        -:  401:    }
+        -:  402:
+        -:  403:    size_type find_first_not_of(basic_string_view s, size_type pos = 0) const
+        -:  404:        noexcept
+        -:  405:    {
+        -:  406:        if (pos >= size())
+        -:  407:            return npos;
+        -:  408:
+        -:  409:        auto it = std::find_if(begin(), end(), [&](const_reference c)
+        -:  410:                               {
+        -:  411:                                   return std::find(s.begin(), s.end(), c,
+        -:  412:                                                    Traits::eq) == s.end();
+        -:  413:                               });
+        -:  414:        if (it == end())
+        -:  415:            return npos;
+        -:  416:        return std::distance(begin(), it);
+        -:  417:    }
+        -:  418:
+        -:  419:    constexpr size_type find_first_not_of(Char c, size_type pos = 0) const
+        -:  420:        noexcept
+        -:  421:    {
+        -:  422:        return find_first_not_of(basic_string_view{&c, 1}, pos);
+        -:  423:    }
+        -:  424:
+        -:  425:    constexpr size_type find_first_not_of(const Char* s, size_type pos,
+        -:  426:                                          size_type n) const
+        -:  427:    {
+        -:  428:        return find_first_not_of(basic_string_view{s, n}, pos);
+        -:  429:    }
+        -:  430:
+        -:  431:    constexpr size_type find_first_not_of(const Char* s,
+        -:  432:                                          size_type pos = 0) const
+        -:  433:    {
+        -:  434:        return find_first_not_of(basic_string_view{s}, pos);
+        -:  435:    }
+        -:  436:
+        -:  437:    size_type find_last_not_of(basic_string_view s, size_type pos = npos) const
+        -:  438:        noexcept
+        -:  439:    {
+        -:  440:        if (pos >= size())
+        -:  441:            return npos;
+        -:  442:
+        -:  443:        auto diff = size() - std::min(size(), pos);
+        -:  444:        auto it = std::find_if(rbegin() + diff, rend(), [&](const_reference c)
+        -:  445:                               {
+        -:  446:                                   return std::find(s.begin(), s.end(), c,
+        -:  447:                                                    Traits::eq) == s.end();
+        -:  448:                               });
+        -:  449:        if (it == rend())
+        -:  450:            return npos;
+        -:  451:        return size() - 1 - std::distance(rbegin(), it);
+        -:  452:    }
+        -:  453:
+        -:  454:    constexpr size_type find_last_not_of(Char c, size_type pos = npos) const
+        -:  455:        noexcept
+        -:  456:    {
+        -:  457:        return find_last_not_of(basic_string_view{&c, 1}, pos);
+        -:  458:    }
+        -:  459:
+        -:  460:    constexpr size_type find_last_not_of(const Char* s, size_type pos,
+        -:  461:                                         size_type n) const
+        -:  462:    {
+        -:  463:        return find_last_not_of(basic_string_view{s, n}, pos);
+        -:  464:    }
+        -:  465:
+        -:  466:    constexpr size_type find_last_not_of(const Char* s,
+        -:  467:                                         size_type pos = npos) const
+        -:  468:    {
+        -:  469:        return find_last_not_of(basic_string_view{s}, pos);
+        -:  470:    }
+        -:  471:
+        -:  472:  private:
+        -:  473:    const_pointer data_;
+        -:  474:    size_type size_;
+        -:  475:};
+        -:  476:
+        -:  477:using string_view = basic_string_view<char>;
+        -:  478:using u16string_view = basic_string_view<char16_t>;
+        -:  479:using u32string_view = basic_string_view<char32_t>;
+        -:  480:using wstring_view = basic_string_view<wchar_t>;
+        -:  481:
+        -:  482:namespace
+        -:  483:{
+        -:  484:template <class T>
+        -:  485:using identity = typename std::decay<T>::type;
+        -:  486:}
+        -:  487:
+        -:  488:template <class Char, class Traits>
+function _ZN4meta4utileqIcSt11char_traitsIcEEEbNS0_17basic_string_viewIT_T0_EES7_ called 77220 returned 100% blocks executed 100%
+    77220:  489:constexpr bool operator==(basic_string_view<Char, Traits> lhs,
+        -:  490:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  491:{
+    77220:  492:    return lhs.compare(rhs) == 0;
+    77220:  492-block  0
+call    0 returned 77220
+        -:  493:}
+        -:  494:
+        -:  495:template <class Char, class Traits>
+        -:  496:constexpr bool
+        -:  497:    operator==(basic_string_view<Char, Traits> lhs,
+        -:  498:               identity<basic_string_view<Char, Traits>> rhs) noexcept
+        -:  499:{
+        -:  500:    return lhs.compare(rhs) == 0;
+        -:  501:}
+        -:  502:
+        -:  503:template <class Char, class Traits>
+        -:  504:constexpr bool operator==(identity<basic_string_view<Char, Traits>> lhs,
+        -:  505:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  506:{
+        -:  507:    return lhs.compare(rhs) == 0;
+        -:  508:}
+        -:  509:
+        -:  510:template <class Char, class Traits>
+        -:  511:constexpr bool operator!=(basic_string_view<Char, Traits> lhs,
+        -:  512:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  513:{
+        -:  514:    return lhs.compare(rhs) != 0;
+        -:  515:}
+        -:  516:
+        -:  517:template <class Char, class Traits>
+        -:  518:constexpr bool
+        -:  519:    operator!=(basic_string_view<Char, Traits> lhs,
+        -:  520:               identity<basic_string_view<Char, Traits>> rhs) noexcept
+        -:  521:{
+        -:  522:    return lhs.compare(rhs) != 0;
+        -:  523:}
+        -:  524:
+        -:  525:template <class Char, class Traits>
+        -:  526:constexpr bool operator!=(identity<basic_string_view<Char, Traits>> lhs,
+        -:  527:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  528:{
+        -:  529:    return lhs.compare(rhs) != 0;
+        -:  530:}
+        -:  531:
+        -:  532:template <class Char, class Traits>
+        -:  533:constexpr bool operator<(basic_string_view<Char, Traits> lhs,
+        -:  534:                         basic_string_view<Char, Traits> rhs) noexcept
+        -:  535:{
+        -:  536:    return lhs.compare(rhs) < 0;
+        -:  537:}
+        -:  538:
+        -:  539:template <class Char, class Traits>
+        -:  540:constexpr bool operator<(basic_string_view<Char, Traits> lhs,
+        -:  541:                         identity<basic_string_view<Char, Traits>> rhs) noexcept
+        -:  542:{
+        -:  543:    return lhs.compare(rhs) < 0;
+        -:  544:}
+        -:  545:
+        -:  546:template <class Char, class Traits>
+        -:  547:constexpr bool operator<(identity<basic_string_view<Char, Traits>> lhs,
+        -:  548:                         basic_string_view<Char, Traits> rhs) noexcept
+        -:  549:{
+        -:  550:    return lhs.compare(rhs) < 0;
+        -:  551:}
+        -:  552:
+        -:  553:template <class Char, class Traits>
+        -:  554:constexpr bool operator>(basic_string_view<Char, Traits> lhs,
+        -:  555:                         basic_string_view<Char, Traits> rhs) noexcept
+        -:  556:{
+        -:  557:    return lhs.compare(rhs) > 0;
+        -:  558:}
+        -:  559:
+        -:  560:template <class Char, class Traits>
+        -:  561:constexpr bool operator>(basic_string_view<Char, Traits> lhs,
+        -:  562:                         identity<basic_string_view<Char, Traits>> rhs) noexcept
+        -:  563:{
+        -:  564:    return lhs.compare(rhs) > 0;
+        -:  565:}
+        -:  566:
+        -:  567:template <class Char, class Traits>
+        -:  568:constexpr bool operator>(identity<basic_string_view<Char, Traits>> lhs,
+        -:  569:                         basic_string_view<Char, Traits> rhs) noexcept
+        -:  570:{
+        -:  571:    return lhs.compare(rhs) > 0;
+        -:  572:}
+        -:  573:
+        -:  574:template <class Char, class Traits>
+        -:  575:constexpr bool operator<=(basic_string_view<Char, Traits> lhs,
+        -:  576:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  577:{
+        -:  578:    return lhs.compare(rhs) <= 0;
+        -:  579:}
+        -:  580:
+        -:  581:template <class Char, class Traits>
+        -:  582:constexpr bool
+        -:  583:    operator<=(basic_string_view<Char, Traits> lhs,
+        -:  584:               identity<basic_string_view<Char, Traits>> rhs) noexcept
+        -:  585:{
+        -:  586:    return lhs.compare(rhs) <= 0;
+        -:  587:}
+        -:  588:
+        -:  589:template <class Char, class Traits>
+        -:  590:constexpr bool operator<=(identity<basic_string_view<Char, Traits>> lhs,
+        -:  591:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  592:{
+        -:  593:    return lhs.compare(rhs) <= 0;
+        -:  594:}
+        -:  595:
+        -:  596:template <class Char, class Traits>
+        -:  597:constexpr bool operator>=(basic_string_view<Char, Traits> lhs,
+        -:  598:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  599:{
+        -:  600:    return lhs.compare(rhs) >= 0;
+        -:  601:}
+        -:  602:
+        -:  603:template <class Char, class Traits>
+        -:  604:constexpr bool
+        -:  605:    operator>=(basic_string_view<Char, Traits> lhs,
+        -:  606:               identity<basic_string_view<Char, Traits>> rhs) noexcept
+        -:  607:{
+        -:  608:    return lhs.compare(rhs) >= 0;
+        -:  609:}
+        -:  610:
+        -:  611:template <class Char, class Traits>
+        -:  612:constexpr bool operator>=(identity<basic_string_view<Char, Traits>> lhs,
+        -:  613:                          basic_string_view<Char, Traits> rhs) noexcept
+        -:  614:{
+        -:  615:    return lhs.compare(rhs) >= 0;
+        -:  616:}
+        -:  617:
+        -:  618:template <class Char, class Traits>
+        -:  619:std::basic_ostream<Char, Traits>&
+        -:  620:    operator<<(std::basic_ostream<Char, Traits>& os,
+        -:  621:               basic_string_view<Char, Traits> str)
+        -:  622:{
+        -:  623:    return os << str.to_string();
+        -:  624:}
+        -:  625:}
+        -:  626:}
+        -:  627:
+        -:  628:namespace std
+        -:  629:{
+        -:  630:template <class Char, class Traits>
+        -:  631:struct hash<meta::util::basic_string_view<Char, Traits>>
+        -:  632:    : public meta::util::hash<>
+        -:  633:{
+        -:  634:};
+        -:  635:}
+        -:  636:#endif // !META_HAS_EXPERIMENTAL_STRING_VIEW
+        -:  637:
+        -:  638:namespace meta
+        -:  639:{
+        -:  640:namespace util
+        -:  641:{
+        -:  642:template <class HashAlgorithm, class Char, class Traits>
+        -:  643:typename std::enable_if<is_contiguously_hashable<Char>::value>::type
+function _ZN4meta4util11hash_appendINS0_11murmur_hashILm8EEEcSt11char_traitsIcEEENSt9enable_ifIXsrNS0_24is_contiguously_hashableIT0_EE5valueEvE4typeERT_RKNS0_17basic_string_viewIS8_T1_EE called 9927 returned 100% blocks executed 100%
+     9927:  644:    hash_append(HashAlgorithm& h, const basic_string_view<Char, Traits>& s)
+        -:  645:{
+     9927:  646:    h(s.data(), s.size() * sizeof(Char));
+     9927:  646-block  0
+call    0 returned 9927
+call    1 returned 9927
+call    2 returned 9927
+     9927:  647:    hash_append(h, s.size());
+call    0 returned 9927
+call    1 returned 9927
+branch  2 taken 9927 (fallthrough)
+branch  3 taken 0 (throw)
+     9927:  648:}
+     9927:  648-block  0
+        -:  649:
+        -:  650:template <class HashAlgorithm, class Char, class Traits>
+        -:  651:typename std::enable_if<!is_contiguously_hashable<Char>::value>::type
+        -:  652:    hash_append(HashAlgorithm& h, const basic_string_view<Char, Traits>& s)
+        -:  653:{
+        -:  654:    for (const auto& c : s)
+        -:  655:        hash_append(h, c);
+        -:  656:    hash_append(h, s.size());
+        -:  657:}
+        -:  658:}
+        -:  659:}
+        -:  660:#endif // META_UTIL_STRING_VIEW_H_

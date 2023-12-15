@@ -1,0 +1,173 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/DSTreeNode.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    0:Source is newer than graph
+        -:    1://
+        -:    2:// Created by robot on 4/10/2021.
+        -:    3://
+        -:    4:
+        -:    5:#ifndef DSAVLMAP_DSTREENODE_H
+        -:    6:#define DSAVLMAP_DSTREENODE_H
+        -:    7:
+        -:    8:#include <list>
+        -:    9:#include <set>
+        -:   10:#include <vector>
+        -:   11:#include <iostream>
+        -:   12:
+        -:   13:using namespace std;
+        -:   14:
+        -:   15:template<class K, class V, class R>
+        -:   16:class DSTreeNode {
+        -:   17:private:
+        -:   18:    K key;
+        -:   19:    vector<V> values;
+        -:   20:    vector<R> rankings;
+        -:   21:    DSTreeNode<K,V, R>* left = nullptr;
+        -:   22:    DSTreeNode<K,V, R>* right = nullptr;
+        -:   23:    int height;
+        -:   24:public:
+        -:   25:    //TODO inline constructors if possible
+        -:   26:    DSTreeNode();
+        -:   27:    DSTreeNode(K d,V val, R ranking, DSTreeNode<K,V, R>* l = nullptr, DSTreeNode<K,V,R>* r = nullptr);
+        -:   28:    DSTreeNode(const DSTreeNode & toCopy);
+        -:   29:    ~DSTreeNode();
+        -:   30:    //operators
+        -:   31:    DSTreeNode<K,V,R>& operator = (const DSTreeNode<K,V,R>& val);
+        -:   32:    //accessors
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE6getKeyEv called 161817 returned 100% blocks executed 100%
+   161817:   33:    K& getKey(){return key;}
+   161817:   33-block  0
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE9getValuesEv called 0 returned 0% blocks executed 0%
+    #####:   34:    vector<V> getValues(){
+    #####:   35:        return values;
+    %%%%%:   35-block  0
+call    0 never executed
+        -:   36:    }
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE11getRankingsEv called 0 returned 0% blocks executed 0%
+    #####:   37:    vector<R> getRankings(){return rankings;}
+    %%%%%:   37-block  0
+call    0 never executed
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE9getHeightEv called 586246 returned 100% blocks executed 100%
+   586246:   38:    inline int& getHeight(){return height;}
+   586246:   38-block  0
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE7getLeftEv called 380894 returned 100% blocks executed 100%
+   380894:   39:    inline DSTreeNode*& getLeft(){return left;}
+   380894:   39-block  0
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE8getRightEv called 381232 returned 100% blocks executed 100%
+   381232:   40:    inline DSTreeNode*& getRight(){return right;}
+   381232:   40-block  0
+        -:   41:    //mutators
+        -:   42:    inline void setKey(const K& newKey){key = newKey;}
+        -:   43:    void addValue(const V& val, const R& rank);
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE9setHeightERKi called 107879 returned 100% blocks executed 100%
+   107879:   44:    inline void setHeight(const int& h){height = h;}
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE7setLeftEPS6_ called 2777 returned 100% blocks executed 100%
+     2777:   45:    inline void setLeft(DSTreeNode<K,V,R>* node){left = node;}
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE8setRightEPS6_ called 2777 returned 100% blocks executed 100%
+     2777:   46:    inline void setRight(DSTreeNode<K,V,R>* node){right = node;}
+        -:   47:};
+        -:   48:
+        -:   49:#endif //DSAVLMAP_DSTREENODE_H
+        -:   50:
+        -:   51:template<class K, class V, class R>
+        -:   52:DSTreeNode<K,V,R>::DSTreeNode(){
+        -:   53:    height = -1;
+        -:   54:    left = nullptr;
+        -:   55:    right = nullptr;
+        -:   56:}//default constructor
+        -:   57:template<class K, class V, class R>
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iEC2ES5_S5_iPS6_S7_ called 3632 returned 100% blocks executed 62%
+     3632:   58:DSTreeNode<K,V,R>::DSTreeNode(K d,V val, R ranked, DSTreeNode<K,V,R>* l, DSTreeNode<K,V,R>* r){
+     3632:   58-block  0
+call    0 returned 3632
+call    1 returned 3632
+call    2 returned 3632
+    $$$$$:   58-block  1
+call    3 never executed
+    $$$$$:   58-block  2
+call    4 never executed
+    $$$$$:   58-block  3
+call    5 never executed
+     3632:   59:    key = d;
+call    0 returned 3632
+branch  1 taken 3632 (fallthrough)
+branch  2 taken 0 (throw)
+     3632:   60:    values.push_back(val);
+     3632:   60-block  0
+call    0 returned 3632
+branch  1 taken 3632 (fallthrough)
+branch  2 taken 0 (throw)
+     3632:   61:    rankings.push_back(ranked);
+     3632:   61-block  0
+call    0 returned 3632
+branch  1 taken 3632 (fallthrough)
+branch  2 taken 0 (throw)
+     3632:   62:    left = l;
+     3632:   63:    right = r;
+     3632:   64:    height = 0;
+     3632:   65:}// 3 val constructor
+     3632:   65-block  0
+        -:   66:template<class K, class V, class R>
+        -:   67:DSTreeNode<K,V,R>::DSTreeNode(const DSTreeNode<K,V,R> & toCopy){
+        -:   68:    key = toCopy.key;
+        -:   69:    values= toCopy.values;
+        -:   70:    rankings = toCopy.rankings;
+        -:   71:    left = toCopy.left;
+        -:   72:    right = toCopy.right;
+        -:   73:    height = toCopy.height;
+        -:   74:}//copy constructor
+        -:   75:
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iED2Ev called 14528 returned 100% blocks executed 100%
+    14528:   76:template<class K, class V, class R>
+        -:   77:DSTreeNode<K,V,R>::~DSTreeNode(){
+    14528:   78:    if(right != nullptr)
+    14528:   78-block  0
+call    0 returned 14528
+call    1 returned 14528
+call    2 returned 14528
+        -:   79:        delete right;
+        -:   80:    if(left != nullptr)
+        -:   81:        delete left;
+        -:   82:}//destructor
+        -:   83:
+        -:   84:template<class K, class V, class R>
+        -:   85:DSTreeNode<K,V,R> &DSTreeNode<K,V,R>::operator=(const DSTreeNode<K,V,R> &val) {
+        -:   86:    key = val.key;
+        -:   87:    values = val.values;
+        -:   88:    rankings = val.rankings;
+        -:   89:    left = val.left;
+        -:   90:    right = val.right;
+        -:   91:    height = val.height;
+function _ZN10DSTreeNodeINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES5_iE8addValueERKS5_RKi called 6971 returned 100% blocks executed 100%
+     6971:   92:
+    11886:   93:    return *this;
+     6971:   93-block  0
+    11886:   93-block  1
+call    0 returned 11886
+branch  1 taken 10983 (fallthrough)
+branch  2 taken 903
+     4915:   93-block  2
+    10983:   94:}//operator=
+    10983:   94-block  0
+call    0 returned 10983
+call    1 returned 10983
+branch  2 taken 6068 (fallthrough)
+branch  3 taken 4915
+     6068:   95:template<class K, class V, class R>
+     6068:   95-block  0
+call    0 returned 6068
+     6068:   96:void DSTreeNode<K,V,R>::addValue(const V& val, const R& rank){
+        -:   97:    for(int i = 0; i < values.size(); i++){
+        -:   98:        if(values.at(i) == val) {
+      903:   99:            rankings.at(i) += rank;//add to that words rank for this doc ID
+      903:   99-block  0
+call    0 returned 903
+      903:  100:            return;
+call    0 returned 903
+        -:  101:        }
+        -:  102:    }
+        -:  103:    values.push_back(val);//if value not already in list, add to list
+        -:  104:    rankings.push_back(rank);
+        -:  105:}
+        -:  106:

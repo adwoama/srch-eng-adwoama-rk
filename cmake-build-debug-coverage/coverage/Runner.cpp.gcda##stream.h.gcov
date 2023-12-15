@@ -1,0 +1,234 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/stream.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2://
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#include "rapidjson.h"
+        -:   16:
+        -:   17:#ifndef RAPIDJSON_STREAM_H_
+        -:   18:#define RAPIDJSON_STREAM_H_
+        -:   19:
+        -:   20:#include "encodings.h"
+        -:   21:
+        -:   22:RAPIDJSON_NAMESPACE_BEGIN
+        -:   23:
+        -:   24:///////////////////////////////////////////////////////////////////////////////
+        -:   25://  Stream
+        -:   26:
+        -:   27:/*! \class rapidjson::Stream
+        -:   28:    \brief Concept for reading and writing characters.
+        -:   29:
+        -:   30:    For read-only stream, no need to implement PutBegin(), Put(), Flush() and PutEnd().
+        -:   31:
+        -:   32:    For write-only stream, only need to implement Put() and Flush().
+        -:   33:
+        -:   34:\code
+        -:   35:concept Stream {
+        -:   36:    typename Ch;    //!< Character type of the stream.
+        -:   37:
+        -:   38:    //! Read the current character from stream without moving the read cursor.
+        -:   39:    Ch Peek() const;
+        -:   40:
+        -:   41:    //! Read the current character from stream and moving the read cursor to next character.
+        -:   42:    Ch Take();
+        -:   43:
+        -:   44:    //! Get the current read cursor.
+        -:   45:    //! \return Number of characters read from start.
+        -:   46:    size_t Tell();
+        -:   47:
+        -:   48:    //! Begin writing operation at the current read pointer.
+        -:   49:    //! \return The begin writer pointer.
+        -:   50:    Ch* PutBegin();
+        -:   51:
+        -:   52:    //! Write a character.
+        -:   53:    void Put(Ch c);
+        -:   54:
+        -:   55:    //! Flush the buffer.
+        -:   56:    void Flush();
+        -:   57:
+        -:   58:    //! End the writing operation.
+        -:   59:    //! \param begin The begin write pointer returned by PutBegin().
+        -:   60:    //! \return Number of characters written.
+        -:   61:    size_t PutEnd(Ch* begin);
+        -:   62:}
+        -:   63:\endcode
+        -:   64:*/
+        -:   65:
+        -:   66://! Provides additional information for stream.
+        -:   67:/*!
+        -:   68:    By using traits pattern, this type provides a default configuration for stream.
+        -:   69:    For custom stream, this type can be specialized for other configuration.
+        -:   70:    See TEST(Reader, CustomStringStream) in readertest.cpp for example.
+        -:   71:*/
+        -:   72:template<typename Stream>
+        -:   73:struct StreamTraits {
+        -:   74:    //! Whether to make local copy of stream for optimization during parsing.
+        -:   75:    /*!
+        -:   76:        By default, for safety, streams do not use local copy optimization.
+        -:   77:        Stream that can be copied fast should specialize this, like StreamTraits<StringStream>.
+        -:   78:    */
+        -:   79:    enum { copyOptimization = 0 };
+        -:   80:};
+        -:   81:
+        -:   82://! Reserve n characters for writing to a stream.
+        -:   83:template<typename Stream>
+        -:   84:inline void PutReserve(Stream& stream, size_t count) {
+        -:   85:    (void)stream;
+        -:   86:    (void)count;
+        -:   87:}
+        -:   88:
+        -:   89://! Write character to a stream, presuming buffer is reserved.
+        -:   90:template<typename Stream>
+        -:   91:inline void PutUnsafe(Stream& stream, typename Stream::Ch c) {
+        -:   92:    stream.Put(c);
+        -:   93:}
+        -:   94:
+        -:   95://! Put N copies of a character to a stream.
+        -:   96:template<typename Stream, typename Ch>
+        -:   97:inline void PutN(Stream& stream, Ch c, size_t n) {
+        -:   98:    PutReserve(stream, n);
+        -:   99:    for (size_t i = 0; i < n; i++)
+        -:  100:        PutUnsafe(stream, c);
+        -:  101:}
+        -:  102:
+        -:  103:///////////////////////////////////////////////////////////////////////////////
+        -:  104:// GenericStreamWrapper
+        -:  105:
+        -:  106://! A Stream Wrapper
+        -:  107:/*! \tThis string stream is a wrapper for any stream by just forwarding any
+        -:  108:    \treceived message to the origin stream.
+        -:  109:    \note implements Stream concept
+        -:  110:*/
+        -:  111:
+        -:  112:#if defined(_MSC_VER) && _MSC_VER <= 1800
+        -:  113:RAPIDJSON_DIAG_PUSH
+        -:  114:RAPIDJSON_DIAG_OFF(4702)  // unreachable code
+        -:  115:RAPIDJSON_DIAG_OFF(4512)  // assignment operator could not be generated
+        -:  116:#endif
+        -:  117:
+        -:  118:template <typename InputStream, typename Encoding = UTF8<> >
+        -:  119:class GenericStreamWrapper {
+        -:  120:public:
+        -:  121:    typedef typename Encoding::Ch Ch;
+        -:  122:    GenericStreamWrapper(InputStream& is): is_(is) {}
+        -:  123:
+        -:  124:    Ch Peek() const { return is_.Peek(); }
+        -:  125:    Ch Take() { return is_.Take(); }
+        -:  126:    size_t Tell() { return is_.Tell(); }
+        -:  127:    Ch* PutBegin() { return is_.PutBegin(); }
+        -:  128:    void Put(Ch ch) { is_.Put(ch); }
+        -:  129:    void Flush() { is_.Flush(); }
+        -:  130:    size_t PutEnd(Ch* ch) { return is_.PutEnd(ch); }
+        -:  131:
+        -:  132:    // wrapper for MemoryStream
+        -:  133:    const Ch* Peek4() const { return is_.Peek4(); }
+        -:  134:
+        -:  135:    // wrapper for AutoUTFInputStream
+        -:  136:    UTFType GetType() const { return is_.GetType(); }
+        -:  137:    bool HasBOM() const { return is_.HasBOM(); }
+        -:  138:
+        -:  139:protected:
+        -:  140:    InputStream& is_;
+        -:  141:};
+        -:  142:
+        -:  143:#if defined(_MSC_VER) && _MSC_VER <= 1800
+        -:  144:RAPIDJSON_DIAG_POP
+        -:  145:#endif
+        -:  146:
+        -:  147:///////////////////////////////////////////////////////////////////////////////
+        -:  148:// StringStream
+        -:  149:
+        -:  150://! Read-only string stream.
+        -:  151:/*! \note implements Stream concept
+        -:  152:*/
+        -:  153:template <typename Encoding>
+        -:  154:struct GenericStringStream {
+        -:  155:    typedef typename Encoding::Ch Ch;
+        -:  156:
+function _ZN9rapidjson19GenericStringStreamINS_4UTF8IcEEEC2EPKc called 5 returned 100% blocks executed 100%
+        5:  157:    GenericStringStream(const Ch *src) : src_(src), head_(src) {}
+        -:  158:
+function _ZNK9rapidjson19GenericStringStreamINS_4UTF8IcEEE4PeekEv called 535595 returned 100% blocks executed 100%
+   535595:  159:    Ch Peek() const { return *src_; }
+   535595:  159-block  0
+function _ZN9rapidjson19GenericStringStreamINS_4UTF8IcEEE4TakeEv called 473080 returned 100% blocks executed 100%
+   473080:  160:    Ch Take() { return *src_++; }
+   473080:  160-block  0
+function _ZNK9rapidjson19GenericStringStreamINS_4UTF8IcEEE4TellEv called 228003 returned 100% blocks executed 100%
+   228003:  161:    size_t Tell() const { return static_cast<size_t>(src_ - head_); }
+   228003:  161-block  0
+        -:  162:
+        -:  163:    Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+        -:  164:    void Put(Ch) { RAPIDJSON_ASSERT(false); }
+        -:  165:    void Flush() { RAPIDJSON_ASSERT(false); }
+        -:  166:    size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+        -:  167:
+        -:  168:    const Ch* src_;     //!< Current read position.
+        -:  169:    const Ch* head_;    //!< Original head of the string.
+        -:  170:};
+        -:  171:
+        -:  172:template <typename Encoding>
+        -:  173:struct StreamTraits<GenericStringStream<Encoding> > {
+        -:  174:    enum { copyOptimization = 1 };
+        -:  175:};
+        -:  176:
+        -:  177://! String stream with UTF8 encoding.
+        -:  178:typedef GenericStringStream<UTF8<> > StringStream;
+        -:  179:
+        -:  180:///////////////////////////////////////////////////////////////////////////////
+        -:  181:// InsituStringStream
+        -:  182:
+        -:  183://! A read-write string stream.
+        -:  184:/*! This string stream is particularly designed for in-situ parsing.
+        -:  185:    \note implements Stream concept
+        -:  186:*/
+        -:  187:template <typename Encoding>
+        -:  188:struct GenericInsituStringStream {
+        -:  189:    typedef typename Encoding::Ch Ch;
+        -:  190:
+        -:  191:    GenericInsituStringStream(Ch *src) : src_(src), dst_(0), head_(src) {}
+        -:  192:
+        -:  193:    // Read
+        -:  194:    Ch Peek() { return *src_; }
+        -:  195:    Ch Take() { return *src_++; }
+        -:  196:    size_t Tell() { return static_cast<size_t>(src_ - head_); }
+        -:  197:
+        -:  198:    // Write
+        -:  199:    void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+        -:  200:
+        -:  201:    Ch* PutBegin() { return dst_ = src_; }
+        -:  202:    size_t PutEnd(Ch* begin) { return static_cast<size_t>(dst_ - begin); }
+        -:  203:    void Flush() {}
+        -:  204:
+        -:  205:    Ch* Push(size_t count) { Ch* begin = dst_; dst_ += count; return begin; }
+        -:  206:    void Pop(size_t count) { dst_ -= count; }
+        -:  207:
+        -:  208:    Ch* src_;
+        -:  209:    Ch* dst_;
+        -:  210:    Ch* head_;
+        -:  211:};
+        -:  212:
+        -:  213:template <typename Encoding>
+        -:  214:struct StreamTraits<GenericInsituStringStream<Encoding> > {
+        -:  215:    enum { copyOptimization = 1 };
+        -:  216:};
+        -:  217:
+        -:  218://! Insitu string stream with UTF8 encoding.
+        -:  219:typedef GenericInsituStringStream<UTF8<> > InsituStringStream;
+        -:  220:
+        -:  221:RAPIDJSON_NAMESPACE_END
+        -:  222:
+        -:  223:#endif // RAPIDJSON_STREAM_H_

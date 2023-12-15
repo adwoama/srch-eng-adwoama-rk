@@ -1,0 +1,1979 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/porter2_stemmer.cpp
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/porter2_stemmer.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/porter2_stemmer.cpp.gcda
+        -:    0:Runs:1
+        -:    1:/**
+        -:    2: * @file porter2_stemmer.cpp
+        -:    3: * @author Sean Massung
+        -:    4: * @date September 2012
+        -:    5: *
+        -:    6: * Implementation of
+        -:    7: * http://snowball.tartarus.org/algorithms/english/stemmer.html
+        -:    8: *
+        -:    9: * Copyright (C) 2012 Sean Massung
+        -:   10: *
+        -:   11: * Permission is hereby granted, free of charge, to any person obtaining a copy
+        -:   12: * of this software and associated documentation files (the "Software"), to deal
+        -:   13: * in the Software without restriction, including without limitation the rights
+        -:   14: * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        -:   15: * copies of the Software, and to permit persons to whom the Software is
+        -:   16: * furnished to do so, subject to the following conditions:
+        -:   17: *
+        -:   18: * The above copyright notice and this permission notice shall be included in
+        -:   19: * all copies or substantial portions of the Software.
+        -:   20: *
+        -:   21: * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        -:   22: * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        -:   23: * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        -:   24: * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        -:   25: * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        -:   26: * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        -:   27: * SOFTWARE.
+        -:   28: */
+        -:   29:
+        -:   30:#include <algorithm>
+        -:   31:#include <utility>
+        -:   32:#include <unordered_map>
+        -:   33:#include "porter2_stemmer.h"
+        -:   34:
+        -:   35:using namespace Porter2Stemmer::internal;
+        -:   36:
+function _ZN14Porter2Stemmer4stemERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 10603 returned 100% blocks executed 91%
+    10603:   37:void Porter2Stemmer::stem(std::string& word)
+        -:   38:{
+        -:   39:    // special case short words or sentence tags
+    10603:   40:    if (word.size() <= 2 || word == "<s>" || word == "</s>")
+    10603:   40-block  0
+call    0 returned 10603
+branch  1 taken 9916 (fallthrough)
+branch  2 taken 687
+     9916:   40-block  1
+call    3 returned 9916
+branch  4 taken 9916 (fallthrough)
+branch  5 taken 0
+     9916:   40-block  2
+call    6 returned 9916
+branch  7 taken 0 (fallthrough)
+branch  8 taken 9916
+      687:   40-block  3
+     9916:   40-block  4
+    10603:   40-block  5
+branch  9 taken 687 (fallthrough)
+branch 10 taken 9916
+      687:   41:        return;
+      687:   41-block  0
+        -:   42:
+        -:   43:    // max word length is 35 for English
+     9916:   44:    if (word.size() > 35)
+     9916:   44-block  0
+call    0 returned 9916
+branch  1 taken 5 (fallthrough)
+branch  2 taken 9911
+        5:   45:        word = word.substr(0, 35);
+        5:   45-block  0
+call    0 returned 5
+call    1 returned 5
+call    2 returned 5
+        -:   46:
+     9916:   47:    if (word[0] == '\'')
+     9916:   47-block  0
+call    0 returned 9916
+branch  1 taken 1 (fallthrough)
+branch  2 taken 9915
+        1:   48:        word = word.substr(1, word.size() - 1);
+        1:   48-block  0
+call    0 returned 1
+call    1 returned 1
+call    2 returned 1
+call    3 returned 1
+        -:   49:
+     9916:   50:    if (special(word))
+     9916:   50-block  0
+call    0 returned 9916
+branch  1 taken 7 (fallthrough)
+branch  2 taken 9909
+        7:   51:        return;
+        7:   51-block  0
+        -:   52:
+     9909:   53:    changeY(word);
+     9909:   53-block  0
+call    0 returned 9909
+     9909:   54:    size_t startR1 = getStartR1(word);
+call    0 returned 9909
+     9909:   55:    size_t startR2 = getStartR2(word, startR1);
+call    0 returned 9909
+        -:   56:
+     9909:   57:    step0(word);
+call    0 returned 9909
+        -:   58:
+     9909:   59:    if (step1A(word))
+call    0 returned 9909
+branch  1 taken 0 (fallthrough)
+branch  2 taken 9909
+        -:   60:    {
+    #####:   61:        std::replace(word.begin(), word.end(), 'Y', 'y');
+    %%%%%:   61-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:   62:        return;
+        -:   63:    }
+        -:   64:
+     9909:   65:    step1B(word, startR1);
+     9909:   65-block  0
+call    0 returned 9909
+     9909:   66:    step1C(word);
+call    0 returned 9909
+     9909:   67:    step2(word, startR1);
+call    0 returned 9909
+     9909:   68:    step3(word, startR1, startR2);
+call    0 returned 9909
+     9909:   69:    step4(word, startR2);
+call    0 returned 9909
+     9909:   70:    step5(word, startR1, startR2);
+call    0 returned 9909
+        -:   71:
+     9909:   72:    std::replace(word.begin(), word.end(), 'Y', 'y');
+call    0 returned 9909
+call    1 returned 9909
+call    2 returned 9909
+     9909:   73:    return;
+        -:   74:}
+        -:   75:
+function _ZN14Porter2Stemmer4trimERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 0 returned 0% blocks executed 0%
+    #####:   76:void Porter2Stemmer::trim(std::string& word)
+        -:   77:{
+    #####:   78:    if (word == "<s>" || word == "</s>")
+    %%%%%:   78-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    %%%%%:   78-block  1
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:   78-block  2
+    %%%%%:   78-block  3
+    %%%%%:   78-block  4
+branch  6 never executed
+branch  7 never executed
+    #####:   79:        return;
+    %%%%%:   79-block  0
+        -:   80:
+    #####:   81:    std::transform(word.begin(), word.end(), word.begin(), ::tolower);
+    %%%%%:   81-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+        -:   82:    auto it
+function _ZZN14Porter2Stemmer4trimERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEENKUlcE_clEc called 0 returned 0% blocks executed 0%
+    #####:   83:        = std::remove_if(word.begin(), word.end(), [](char ch)
+        -:   84:                         {
+    #####:   85:                             return !((ch >= 'a' && ch <= 'z') || ch == '\'');
+    %%%%%:   85-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:   85-block  1
+branch  2 never executed
+branch  3 never executed
+    %%%%%:   85-block  2
+branch  4 never executed
+branch  5 never executed
+    %%%%%:   85-block  3
+    %%%%%:   85-block  4
+    %%%%%:   85-block  5
+    #####:   86:                         });
+    %%%%%:   86-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    $$$$$:   86-block  1
+        -:   87:
+    #####:   88:    word.erase(it, word.end());
+    %%%%%:   88-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    %%%%%:   88-block  1
+    $$$$$:   88-block  2
+    $$$$$:   88-block  3
+    $$$$$:   88-block  4
+        -:   89:}
+        -:   90:
+function _ZN14Porter2Stemmer8internal10getStartR1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 9909 returned 100% blocks executed 89%
+     9909:   91:size_t Porter2Stemmer::internal::getStartR1(const std::string& word)
+        -:   92:{
+        -:   93:    // special cases
+    18063:   94:    if (word.size() >= 5 && word[0] == 'g' && word[1] == 'e' && word[2] == 'n'
+     9909:   94-block  0
+call    0 returned 9909
+     8154:   94-block  1
+call    1 returned 8154
+branch  2 taken 120 (fallthrough)
+branch  3 taken 8034
+      120:   94-block  2
+call    4 returned 120
+branch  5 taken 48 (fallthrough)
+branch  6 taken 72
+       48:   94-block  3
+call    7 returned 48
+branch  8 taken 47 (fallthrough)
+branch  9 taken 1
+    18063:   95:        && word[3] == 'e' && word[4] == 'r')
+branch  0 taken 8154 (fallthrough)
+branch  1 taken 1755
+       47:   95-block  0
+call    2 returned 47
+branch  3 taken 15 (fallthrough)
+branch  4 taken 32
+       15:   95-block  1
+call    5 returned 15
+branch  6 taken 7 (fallthrough)
+branch  7 taken 8
+        7:   95-block  2
+     9902:   95-block  3
+     9909:   95-block  4
+branch  8 taken 7 (fallthrough)
+branch  9 taken 9902
+        7:   96:        return 5;
+        7:   96-block  0
+    16762:   97:    if (word.size() >= 6 && word[0] == 'c' && word[1] == 'o' && word[2] == 'm'
+     9902:   97-block  0
+call    0 returned 9902
+     6860:   97-block  1
+call    1 returned 6860
+branch  2 taken 526 (fallthrough)
+branch  3 taken 6334
+      526:   97-block  2
+call    4 returned 526
+branch  5 taken 287 (fallthrough)
+branch  6 taken 239
+      287:   97-block  3
+call    7 returned 287
+branch  8 taken 47 (fallthrough)
+branch  9 taken 240
+    16762:   98:        && word[3] == 'm' && word[4] == 'u' && word[5] == 'n')
+branch  0 taken 6860 (fallthrough)
+branch  1 taken 3042
+       47:   98-block  0
+call    2 returned 47
+branch  3 taken 5 (fallthrough)
+branch  4 taken 42
+        5:   98-block  1
+call    5 returned 5
+branch  6 taken 1 (fallthrough)
+branch  7 taken 4
+        1:   98-block  2
+call    8 returned 1
+branch  9 taken 1 (fallthrough)
+branch 10 taken 0
+        1:   98-block  3
+     9901:   98-block  4
+     9902:   98-block  5
+branch 11 taken 1 (fallthrough)
+branch 12 taken 9901
+        1:   99:        return 6;
+        1:   99-block  0
+    18047:  100:    if (word.size() >= 5 && word[0] == 'a' && word[1] == 'r' && word[2] == 's'
+     9901:  100-block  0
+call    0 returned 9901
+     8146:  100-block  1
+call    1 returned 8146
+branch  2 taken 515 (fallthrough)
+branch  3 taken 7631
+      515:  100-block  2
+call    4 returned 515
+branch  5 taken 11 (fallthrough)
+branch  6 taken 504
+       11:  100-block  3
+call    7 returned 11
+branch  8 taken 0 (fallthrough)
+branch  9 taken 11
+   18047*:  101:        && word[3] == 'e' && word[4] == 'n')
+branch  0 taken 8146 (fallthrough)
+branch  1 taken 1755
+    %%%%%:  101-block  0
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    %%%%%:  101-block  1
+call    5 never executed
+branch  6 never executed
+branch  7 never executed
+    %%%%%:  101-block  2
+     9901:  101-block  3
+     9901:  101-block  4
+branch  8 taken 0 (fallthrough)
+branch  9 taken 9901
+    #####:  102:        return 5;
+    %%%%%:  102-block  0
+        -:  103:
+        -:  104:    // general case
+     9901:  105:    return firstNonVowelAfterVowel(word, 1);
+     9901:  105-block  0
+call    0 returned 9901
+        -:  106:}
+        -:  107:
+function _ZN14Porter2Stemmer8internal10getStartR2ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEm called 9909 returned 100% blocks executed 100%
+     9909:  108:size_t Porter2Stemmer::internal::getStartR2(const std::string& word,
+        -:  109:                                            size_t startR1)
+        -:  110:{
+     9909:  111:    if (startR1 == word.size())
+     9909:  111-block  0
+call    0 returned 9909
+branch  1 taken 1869 (fallthrough)
+branch  2 taken 8040
+     1869:  112:        return startR1;
+     1869:  112-block  0
+        -:  113:
+     8040:  114:    return firstNonVowelAfterVowel(word, startR1 + 1);
+     8040:  114-block  0
+call    0 returned 8040
+        -:  115:}
+        -:  116:
+        -:  117:size_t
+function _ZN14Porter2Stemmer8internal23firstNonVowelAfterVowelERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEm called 17941 returned 100% blocks executed 100%
+    17941:  118:    Porter2Stemmer::internal::firstNonVowelAfterVowel(const std::string& word,
+        -:  119:                                                      size_t start)
+        -:  120:{
+    39209:  121:    for (size_t i = start; i != 0 && i < word.size(); ++i)
+    17941:  121-block  0
+    39209:  121-block  1
+branch  0 taken 39209 (fallthrough)
+branch  1 taken 0
+    39209:  121-block  2
+call    2 returned 39209
+branch  3 taken 36224 (fallthrough)
+branch  4 taken 2985
+    36224:  121-block  3
+     2985:  121-block  4
+    39209:  121-block  5
+branch  5 taken 36224 (fallthrough)
+branch  6 taken 2985
+    21268:  121-block  6
+        -:  122:    {
+    36224:  123:        if (!isVowelY(word[i]) && isVowelY(word[i - 1]))
+    36224:  123-block  0
+call    0 returned 36224
+call    1 returned 36224
+branch  2 taken 24454 (fallthrough)
+branch  3 taken 11770
+    24454:  123-block  1
+call    4 returned 24454
+call    5 returned 24454
+branch  6 taken 14956 (fallthrough)
+branch  7 taken 9498
+    14956:  123-block  2
+    21268:  123-block  3
+    36224:  123-block  4
+branch  8 taken 14956 (fallthrough)
+branch  9 taken 21268
+    14956:  124:            return i + 1;
+    14956:  124-block  0
+        -:  125:    }
+        -:  126:
+     2985:  127:    return word.size();
+     2985:  127-block  0
+call    0 returned 2985
+        -:  128:}
+        -:  129:
+function _ZN14Porter2Stemmer8internal7changeYERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 9909 returned 100% blocks executed 100%
+     9909:  130:void Porter2Stemmer::internal::changeY(std::string& word)
+        -:  131:{
+     9909:  132:    if (word[0] == 'y')
+     9909:  132-block  0
+call    0 returned 9909
+branch  1 taken 5 (fallthrough)
+branch  2 taken 9904
+        5:  133:        word[0] = 'Y';
+        5:  133-block  0
+call    0 returned 5
+        -:  134:
+    74789:  135:    for (size_t i = 1; i < word.size(); ++i)
+     9909:  135-block  0
+    74789:  135-block  1
+call    0 returned 74789
+branch  1 taken 64880 (fallthrough)
+branch  2 taken 9909
+    64880:  135-block  2
+        -:  136:    {
+    64880:  137:        if (word[i] == 'y' && isVowel(word[i - 1]))
+    64880:  137-block  0
+call    0 returned 64880
+branch  1 taken 1005 (fallthrough)
+branch  2 taken 63875
+     1005:  137-block  1
+call    3 returned 1005
+call    4 returned 1005
+branch  5 taken 83 (fallthrough)
+branch  6 taken 922
+       83:  137-block  2
+    64797:  137-block  3
+    64880:  137-block  4
+branch  7 taken 83 (fallthrough)
+branch  8 taken 64797
+       83:  138:            word[i++] = 'Y'; // skip next iteration
+       83:  138-block  0
+call    0 returned 83
+        -:  139:    }
+     9909:  140:}
+        -:  141:
+        -:  142:/*
+        -:  143:  Step 0
+        -:  144:*/
+function _ZN14Porter2Stemmer8internal5step0ERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 9909 returned 100% blocks executed 76%
+     9909:  145:void Porter2Stemmer::internal::step0(std::string& word)
+        -:  146:{
+        -:  147:    // short circuit the longest suffix
+    19818:  148:    replaceIfExists(word, "'s'", "", 0) || replaceIfExists(word, "'s", "", 0)
+     9909:  148-block  0
+call    0 returned 9909
+call    1 returned 9909
+call    2 returned 9909
+branch  3 taken 9909 (fallthrough)
+branch  4 taken 0 (throw)
+     9909:  148-block  1
+call    5 returned 9909
+call    6 returned 9909
+call    7 returned 9909
+branch  8 taken 9909 (fallthrough)
+branch  9 taken 0 (throw)
+     9909:  148-block  2
+branch 10 taken 9885 (fallthrough)
+branch 11 taken 24
+    $$$$$:  148-block  3
+    $$$$$:  148-block  4
+    $$$$$:  148-block  5
+    19818:  149:        || replaceIfExists(word, "'", "", 0);
+     9909:  149-block  0
+branch  0 taken 9909 (fallthrough)
+branch  1 taken 0
+     9885:  149-block  1
+call    2 returned 9885
+call    3 returned 9885
+call    4 returned 9885
+branch  5 taken 9885 (fallthrough)
+branch  6 taken 0 (throw)
+     9885:  149-block  2
+branch  7 taken 1 (fallthrough)
+branch  8 taken 9884
+       25:  149-block  3
+     9884:  149-block  4
+    $$$$$:  149-block  5
+    $$$$$:  149-block  6
+     9909:  150:}
+     9909:  150-block  0
+        -:  151:
+        -:  152:/*
+        -:  153:  Step 1a:
+        -:  154:
+        -:  155:  sses
+        -:  156:    replace by ss
+        -:  157:
+        -:  158:  ied   ies
+        -:  159:    replace by i if preceded by more than one letter, otherwise by ie
+        -:  160:    (so ties -> tie, cries -> cri)
+        -:  161:
+        -:  162:  us   ss
+        -:  163:    do nothing
+        -:  164:
+        -:  165:  s
+        -:  166:    delete if the preceding word part contains a vowel not immediately before
+        -:  167:  the
+        -:  168:    s (so gas and this retain the s, gaps and kiwis lose it)
+        -:  169:*/
+function _ZN14Porter2Stemmer8internal6step1AERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 9909 returned 100% blocks executed 84%
+     9909:  170:bool Porter2Stemmer::internal::step1A(std::string& word)
+        -:  171:{
+     9909:  172:    if (!replaceIfExists(word, "sses", "ss", 0))
+     9909:  172-block  0
+call    0 returned 9909
+call    1 returned 9909
+call    2 returned 9909
+branch  3 taken 9909 (fallthrough)
+branch  4 taken 0 (throw)
+     9909:  172-block  1
+branch  5 taken 9907 (fallthrough)
+branch  6 taken 2
+    $$$$$:  172-block  2
+    $$$$$:  172-block  3
+call    7 never executed
+        -:  173:    {
+     9907:  174:        if (endsWith(word, "ied") || endsWith(word, "ies"))
+     9907:  174-block  0
+call    0 returned 9907
+call    1 returned 9907
+call    2 returned 9907
+branch  3 taken 9907 (fallthrough)
+branch  4 taken 0 (throw)
+     9907:  174-block  1
+branch  5 taken 9852 (fallthrough)
+branch  6 taken 55
+     9852:  174-block  2
+call    7 returned 9852
+call    8 returned 9852
+call    9 returned 9852
+branch 10 taken 9852 (fallthrough)
+branch 11 taken 0 (throw)
+     9852:  174-block  3
+branch 12 taken 86 (fallthrough)
+branch 13 taken 9766
+      141:  174-block  4
+     9766:  174-block  5
+     9907:  174-block  6
+branch 14 taken 141 (fallthrough)
+branch 15 taken 9766
+    $$$$$:  174-block  7
+    $$$$$:  174-block  8
+    $$$$$:  174-block  9
+    $$$$$:  174-block 10
+call   16 never executed
+        -:  175:        {
+        -:  176:            // if preceded by only one letter
+      141:  177:            if (word.size() <= 4)
+      141:  177-block  0
+call    0 returned 141
+branch  1 taken 0 (fallthrough)
+branch  2 taken 141
+    #####:  178:                word.pop_back();
+    %%%%%:  178-block  0
+call    0 never executed
+        -:  179:            else
+        -:  180:            {
+      141:  181:                word.pop_back();
+      141:  181-block  0
+call    0 returned 141
+      141:  182:                word.pop_back();
+call    0 returned 141
+        -:  183:            }
+        -:  184:        }
+    10979:  185:        else if (endsWith(word, "s") && !endsWith(word, "us")
+     9766:  185-block  0
+call    0 returned 9766
+call    1 returned 9766
+call    2 returned 9766
+branch  3 taken 9766 (fallthrough)
+branch  4 taken 0 (throw)
+     1213:  185-block  1
+call    5 returned 1213
+call    6 returned 1213
+call    7 returned 1213
+branch  8 taken 1213 (fallthrough)
+branch  9 taken 0 (throw)
+     1213:  185-block  2
+branch 10 taken 1115 (fallthrough)
+branch 11 taken 98
+    $$$$$:  185-block  3
+    $$$$$:  185-block  4
+    $$$$$:  185-block  5
+    10979:  186:                 && !endsWith(word, "ss"))
+     9766:  186-block  0
+branch  0 taken 1213 (fallthrough)
+branch  1 taken 8553
+     1115:  186-block  1
+call    2 returned 1115
+call    3 returned 1115
+call    4 returned 1115
+branch  5 taken 1115 (fallthrough)
+branch  6 taken 0 (throw)
+     1115:  186-block  2
+branch  7 taken 1075 (fallthrough)
+branch  8 taken 40
+     1075:  186-block  3
+     8691:  186-block  4
+     9766:  186-block  5
+branch  9 taken 1075 (fallthrough)
+branch 10 taken 8691
+    $$$$$:  186-block  6
+    $$$$$:  186-block  7
+        -:  187:        {
+     1075:  188:            if (word.size() > 2 && containsVowel(word, 0, word.size() - 2))
+     1075:  188-block  0
+call    0 returned 1075
+branch  1 taken 1075 (fallthrough)
+branch  2 taken 0
+     1075:  188-block  1
+call    3 returned 1075
+call    4 returned 1075
+branch  5 taken 1070 (fallthrough)
+branch  6 taken 5
+     1070:  188-block  2
+        5:  188-block  3
+     1075:  188-block  4
+branch  7 taken 1070 (fallthrough)
+branch  8 taken 5
+     1070:  189:                word.pop_back();
+     1070:  189-block  0
+call    0 returned 1070
+        -:  190:        }
+        -:  191:    }
+        -:  192:
+        -:  193:    // special case after step 1a
+    18731:  194:    return (word.size() == 6 || word.size() == 7)
+     9909:  194-block  0
+call    0 returned 9909
+     8822:  194-block  1
+call    1 returned 8822
+branch  2 taken 1115 (fallthrough)
+branch  3 taken 7707
+   20933*:  195:           && (word == "inning" || word == "outing" || word == "canning"
+branch  0 taken 8822 (fallthrough)
+branch  1 taken 1087
+     2202:  195-block  0
+call    2 returned 2202
+branch  3 taken 2202 (fallthrough)
+branch  4 taken 0
+     2202:  195-block  1
+call    5 returned 2202
+branch  6 taken 2202 (fallthrough)
+branch  7 taken 0
+     2202:  195-block  2
+call    8 returned 2202
+branch  9 taken 2202 (fallthrough)
+branch 10 taken 0
+    %%%%%:  195-block  3
+     9909:  195-block  4
+     2202:  196:               || word == "herring" || word == "earring" || word == "proceed"
+     2202:  196-block  0
+call    0 returned 2202
+branch  1 taken 2202 (fallthrough)
+branch  2 taken 0
+     2202:  196-block  1
+call    3 returned 2202
+branch  4 taken 2202 (fallthrough)
+branch  5 taken 0
+     2202:  196-block  2
+call    6 returned 2202
+branch  7 taken 2202 (fallthrough)
+branch  8 taken 0
+    12111:  197:               || word == "exceed" || word == "succeed");
+     2202:  197-block  0
+call    0 returned 2202
+branch  1 taken 2202 (fallthrough)
+branch  2 taken 0
+     2202:  197-block  1
+call    3 returned 2202
+branch  4 taken 0 (fallthrough)
+branch  5 taken 2202
+     9909:  197-block  2
+     9909:  197-block  3
+        -:  198:}
+        -:  199:
+        -:  200:/*
+        -:  201:  Step 1b:
+        -:  202:
+        -:  203:  eed   eedly
+        -:  204:      replace by ee if in R1
+        -:  205:
+        -:  206:  ed   edly   ing   ingly
+        -:  207:      delete if the preceding word part contains a vowel, and after the
+        -:  208:  deletion:
+        -:  209:      if the word ends at, bl or iz add e (so luxuriat -> luxuriate), or
+        -:  210:      if the word ends with a double remove the last letter (so hopp -> hop), or
+        -:  211:      if the word is short, add e (so hop -> hope)
+        -:  212:*/
+function _ZN14Porter2Stemmer8internal6step1BERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEm called 9909 returned 100% blocks executed 69%
+     9909:  213:void Porter2Stemmer::internal::step1B(std::string& word, size_t startR1)
+        -:  214:{
+    9909*:  215:    bool exists = endsWith(word, "eedly") || endsWith(word, "eed");
+     9909:  215-block  0
+call    0 returned 9909
+call    1 returned 9909
+call    2 returned 9909
+branch  3 taken 9909 (fallthrough)
+branch  4 taken 0 (throw)
+     9909:  215-block  1
+branch  5 taken 9909 (fallthrough)
+branch  6 taken 0
+     9909:  215-block  2
+call    7 returned 9909
+call    8 returned 9909
+call    9 returned 9909
+branch 10 taken 9909 (fallthrough)
+branch 11 taken 0 (throw)
+     9909:  215-block  3
+branch 12 taken 0 (fallthrough)
+branch 13 taken 9909
+    %%%%%:  215-block  4
+     9909:  215-block  5
+    $$$$$:  215-block  6
+    $$$$$:  215-block  7
+    $$$$$:  215-block  8
+    $$$$$:  215-block  9
+call   14 never executed
+        -:  216:
+     9909:  217:    if (exists) // look only in startR1 now
+     9909:  217-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 9909
+    #####:  218:        replaceIfExists(word, "eedly", "ee", startR1)
+    %%%%%:  218-block  0
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+    $$$$$:  218-block  1
+    $$$$$:  218-block  2
+call    5 never executed
+    #####:  219:            || replaceIfExists(word, "eed", "ee", startR1);
+    %%%%%:  219-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:  219-block  1
+call    2 never executed
+call    3 never executed
+call    4 never executed
+branch  5 never executed
+branch  6 never executed
+    %%%%%:  219-block  2
+branch  7 never executed
+branch  8 never executed
+    %%%%%:  219-block  3
+    %%%%%:  219-block  4
+    %%%%%:  219-block  5
+    $$$$$:  219-block  6
+    $$$$$:  219-block  7
+        -:  220:    else
+        -:  221:    {
+     9909:  222:        size_t size = word.size();
+     9909:  222-block  0
+call    0 returned 9909
+     9909:  223:        bool deleted = (containsVowel(word, 0, size - 2)
+call    0 returned 9909
+     8093:  224:                        && replaceIfExists(word, "ed", "", 0))
+     8093:  224-block  0
+call    0 returned 8093
+call    1 returned 8093
+call    2 returned 8093
+branch  3 taken 8093 (fallthrough)
+branch  4 taken 0 (throw)
+     8093:  224-block  1
+branch  5 taken 7182 (fallthrough)
+branch  6 taken 911
+    $$$$$:  224-block  2
+    $$$$$:  224-block  3
+call    7 never executed
+     8998:  225:                       || (containsVowel(word, 0, size - 4)
+     8998:  225-block  0
+call    0 returned 8998
+branch  1 taken 5362 (fallthrough)
+branch  2 taken 3636
+     5362:  226:                           && replaceIfExists(word, "edly", "", 0))
+     5362:  226-block  0
+call    0 returned 5362
+call    1 returned 5362
+call    2 returned 5362
+branch  3 taken 5362 (fallthrough)
+branch  4 taken 0 (throw)
+     5362:  226-block  1
+branch  5 taken 5359 (fallthrough)
+branch  6 taken 3
+    $$$$$:  226-block  2
+    $$$$$:  226-block  3
+     8995:  227:                       || (containsVowel(word, 0, size - 3)
+     8995:  227-block  0
+call    0 returned 8995
+branch  1 taken 6068 (fallthrough)
+branch  2 taken 2927
+     6068:  228:                           && replaceIfExists(word, "ing", "", 0))
+     6068:  228-block  0
+call    0 returned 6068
+call    1 returned 6068
+call    2 returned 6068
+branch  3 taken 6068 (fallthrough)
+branch  4 taken 0 (throw)
+     6068:  228-block  1
+branch  5 taken 5807 (fallthrough)
+branch  6 taken 261
+    $$$$$:  228-block  2
+    $$$$$:  228-block  3
+    23924:  229:                       || (containsVowel(word, 0, size - 5)
+branch  0 taken 8093 (fallthrough)
+branch  1 taken 1816
+     8734:  229-block  0
+call    2 returned 8734
+branch  3 taken 4106 (fallthrough)
+branch  4 taken 4628
+     1175:  229-block  1
+     8734:  229-block  2
+     4106:  230:                           && replaceIfExists(word, "ingly", "", 0));
+     4106:  230-block  0
+call    0 returned 4106
+call    1 returned 4106
+call    2 returned 4106
+branch  3 taken 4106 (fallthrough)
+branch  4 taken 0 (throw)
+     4106:  230-block  1
+branch  5 taken 0 (fallthrough)
+branch  6 taken 4106
+    $$$$$:  230-block  2
+    $$$$$:  230-block  3
+        -:  231:
+    10868:  232:        if (deleted && (endsWith(word, "at") || endsWith(word, "bl")
+     9909:  232-block  0
+branch  0 taken 1175 (fallthrough)
+branch  1 taken 8734
+     1175:  232-block  1
+call    2 returned 1175
+call    3 returned 1175
+call    4 returned 1175
+branch  5 taken 1175 (fallthrough)
+branch  6 taken 0 (throw)
+     1175:  232-block  2
+branch  7 taken 961 (fallthrough)
+branch  8 taken 214
+      961:  232-block  3
+call    9 returned 961
+call   10 returned 961
+call   11 returned 961
+branch 12 taken 961 (fallthrough)
+branch 13 taken 0 (throw)
+      961:  232-block  4
+branch 14 taken 959 (fallthrough)
+branch 15 taken 2
+      249:  232-block  5
+     9660:  232-block  6
+    $$$$$:  232-block  7
+    $$$$$:  232-block  8
+    $$$$$:  232-block  9
+    10868:  233:                        || endsWith(word, "iz")))
+      959:  233-block  0
+call    0 returned 959
+call    1 returned 959
+call    2 returned 959
+branch  3 taken 959 (fallthrough)
+branch  4 taken 0 (throw)
+      959:  233-block  1
+branch  5 taken 33 (fallthrough)
+branch  6 taken 926
+     9909:  233-block  2
+branch  7 taken 249 (fallthrough)
+branch  8 taken 9660
+    $$$$$:  233-block  3
+    $$$$$:  233-block  4
+      249:  234:            word.push_back('e');
+      249:  234-block  0
+call    0 returned 249
+     9660:  235:        else if (deleted && endsInDouble(word))
+     9660:  235-block  0
+branch  0 taken 926 (fallthrough)
+branch  1 taken 8734
+      926:  235-block  1
+call    2 returned 926
+branch  3 taken 40 (fallthrough)
+branch  4 taken 886
+       40:  235-block  2
+     9620:  235-block  3
+     9660:  235-block  4
+branch  5 taken 40 (fallthrough)
+branch  6 taken 9620
+       40:  236:            word.pop_back();
+       40:  236-block  0
+call    0 returned 40
+     9620:  237:        else if (deleted && startR1 == word.size() && isShort(word))
+     9620:  237-block  0
+branch  0 taken 886 (fallthrough)
+branch  1 taken 8734
+      886:  237-block  1
+call    2 returned 886
+branch  3 taken 135 (fallthrough)
+branch  4 taken 751
+      135:  237-block  2
+call    5 returned 135
+branch  6 taken 33 (fallthrough)
+branch  7 taken 102
+       33:  237-block  3
+     9587:  237-block  4
+     9620:  237-block  5
+branch  8 taken 33 (fallthrough)
+branch  9 taken 9587
+       33:  238:            word.push_back('e');
+       33:  238-block  0
+call    0 returned 33
+        -:  239:    }
+     9909:  240:}
+     9909:  240-block  0
+        -:  241:
+        -:  242:/*
+        -:  243:  Step 1c:
+        -:  244:
+        -:  245:  Replace suffix y or Y by i if preceded by a non-vowel which is not the first
+        -:  246:  letter of the word (so cry -> cri, by -> by, say -> say)
+        -:  247:*/
+function _ZN14Porter2Stemmer8internal6step1CERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 9909 returned 100% blocks executed 100%
+     9909:  248:void Porter2Stemmer::internal::step1C(std::string& word)
+        -:  249:{
+     9909:  250:    size_t size = word.size();
+     9909:  250-block  0
+call    0 returned 9909
+     9909:  251:    if (size > 2 && (word[size - 1] == 'y' || word[size - 1] == 'Y'))
+branch  0 taken 9905 (fallthrough)
+branch  1 taken 4
+     9905:  251-block  0
+call    2 returned 9905
+branch  3 taken 9453 (fallthrough)
+branch  4 taken 452
+     9453:  251-block  1
+call    5 returned 9453
+branch  6 taken 66 (fallthrough)
+branch  7 taken 9387
+      518:  251-block  2
+     9391:  251-block  3
+     9909:  251-block  4
+branch  8 taken 518 (fallthrough)
+branch  9 taken 9391
+      518:  252:        if (!isVowel(word[size - 2]))
+      518:  252-block  0
+call    0 returned 518
+call    1 returned 518
+branch  2 taken 452 (fallthrough)
+branch  3 taken 66
+      452:  253:            word[size - 1] = 'i';
+      452:  253-block  0
+call    0 returned 452
+     9909:  254:}
+        -:  255:
+        -:  256:/*
+        -:  257:  Step 2:
+        -:  258:
+        -:  259:  If found and in R1, perform the action indicated.
+        -:  260:
+        -:  261:  tional:               replace by tion
+        -:  262:  enci:                 replace by ence
+        -:  263:  anci:                 replace by ance
+        -:  264:  abli:                 replace by able
+        -:  265:  entli:                replace by ent
+        -:  266:  izer, ization:        replace by ize
+        -:  267:  ational, ation, ator: replace by ate
+        -:  268:  alism, aliti, alli:   replace by al
+        -:  269:  fulness:              replace by ful
+        -:  270:  ousli, ousness:       replace by ous
+        -:  271:  iveness, iviti:       replace by ive
+        -:  272:  biliti, bli:          replace by ble
+        -:  273:  fulli:                replace by ful
+        -:  274:  lessli:               replace by less
+        -:  275:  ogi:                  replace by og if preceded by l
+        -:  276:  li:                   delete if preceded by a valid li-ending
+        -:  277:*/
+function _ZN14Porter2Stemmer8internal5step2ERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEm called 9909 returned 100% blocks executed 80%
+     9909:  278:void Porter2Stemmer::internal::step2(std::string& word, size_t startR1)
+        -:  279:{
+        -:  280:    static const std::pair<meta::util::string_view, meta::util::string_view>
+        -:  281:        subs[] = {{"ational", "ate"},
+        -:  282:                  {"tional", "tion"},
+        -:  283:                  {"enci", "ence"},
+        -:  284:                  {"anci", "ance"},
+        -:  285:                  {"abli", "able"},
+        -:  286:                  {"entli", "ent"},
+        -:  287:                  {"izer", "ize"},
+        -:  288:                  {"ization", "ize"},
+        -:  289:                  {"ation", "ate"},
+        -:  290:                  {"ator", "ate"},
+        -:  291:                  {"alism", "al"},
+        -:  292:                  {"aliti", "al"},
+        -:  293:                  {"alli", "al"},
+        -:  294:                  {"fulness", "ful"},
+        -:  295:                  {"ousli", "ous"},
+        -:  296:                  {"ousness", "ous"},
+        -:  297:                  {"iveness", "ive"},
+        -:  298:                  {"iviti", "ive"},
+        -:  299:                  {"biliti", "ble"},
+        -:  300:                  {"bli", "ble"},
+        -:  301:                  {"fulli", "ful"},
+     9909:  302:                  {"lessli", "less"}};
+     9909:  302-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 9908
+        1:  302-block  1
+call    2 returned 1
+branch  3 taken 1 (fallthrough)
+branch  4 taken 0
+        1:  302-block  2
+call    5 returned 1
+branch  6 taken 1 (fallthrough)
+branch  7 taken 0 (throw)
+        1:  302-block  3
+call    8 returned 1
+call    9 returned 1
+call   10 returned 1
+call   11 returned 1
+call   12 returned 1
+call   13 returned 1
+call   14 returned 1
+branch 15 taken 1 (fallthrough)
+branch 16 taken 0 (throw)
+        1:  302-block  4
+call   17 returned 1
+call   18 returned 1
+call   19 returned 1
+call   20 returned 1
+call   21 returned 1
+call   22 returned 1
+branch 23 taken 1 (fallthrough)
+branch 24 taken 0 (throw)
+        1:  302-block  5
+call   25 returned 1
+call   26 returned 1
+branch 27 taken 1 (fallthrough)
+branch 28 taken 0 (throw)
+        1:  302-block  6
+call   29 returned 1
+branch 30 taken 1 (fallthrough)
+branch 31 taken 0 (throw)
+        1:  302-block  7
+call   32 returned 1
+call   33 returned 1
+call   34 returned 1
+call   35 returned 1
+call   36 returned 1
+call   37 returned 1
+    $$$$$:  302-block  8
+branch 38 never executed
+branch 39 never executed
+    $$$$$:  302-block  9
+call   40 never executed
+        -:  303:
+   222597:  304:    for (auto& sub : subs)
+     9909:  304-block  0
+   222597:  304-block  1
+branch  0 taken 213081 (fallthrough)
+branch  1 taken 9516
+   212688:  304-block  2
+   213081:  305:        if (replaceIfExists(word, sub.first, sub.second, startR1))
+   213081:  305-block  0
+call    0 returned 213081
+branch  1 taken 393 (fallthrough)
+branch  2 taken 212688
+      393:  306:            return;
+      393:  306-block  0
+        -:  307:
+     9516:  308:    if (!replaceIfExists(word, "logi", "log", startR1 - 1))
+     9516:  308-block  0
+call    0 returned 9516
+call    1 returned 9516
+call    2 returned 9516
+branch  3 taken 9516 (fallthrough)
+branch  4 taken 0 (throw)
+     9516:  308-block  1
+branch  5 taken 9509 (fallthrough)
+branch  6 taken 7
+    $$$$$:  308-block  2
+    $$$$$:  308-block  3
+call    7 never executed
+        -:  309:    {
+        -:  310:        // make sure we choose the longest suffix
+     9581:  311:        if (endsWith(word, "li") && !endsWith(word, "abli")
+     9509:  311-block  0
+call    0 returned 9509
+call    1 returned 9509
+call    2 returned 9509
+branch  3 taken 9509 (fallthrough)
+branch  4 taken 0 (throw)
+       72:  311-block  1
+call    5 returned 72
+call    6 returned 72
+call    7 returned 72
+branch  8 taken 72 (fallthrough)
+branch  9 taken 0 (throw)
+       72:  311-block  2
+branch 10 taken 72 (fallthrough)
+branch 11 taken 0
+    $$$$$:  311-block  3
+    $$$$$:  311-block  4
+    $$$$$:  311-block  5
+       72:  312:            && !endsWith(word, "entli") && !endsWith(word, "aliti")
+       72:  312-block  0
+call    0 returned 72
+call    1 returned 72
+call    2 returned 72
+branch  3 taken 72 (fallthrough)
+branch  4 taken 0 (throw)
+       72:  312-block  1
+branch  5 taken 72 (fallthrough)
+branch  6 taken 0
+       72:  312-block  2
+call    7 returned 72
+call    8 returned 72
+call    9 returned 72
+branch 10 taken 72 (fallthrough)
+branch 11 taken 0 (throw)
+       72:  312-block  3
+branch 12 taken 72 (fallthrough)
+branch 13 taken 0
+    $$$$$:  312-block  4
+    $$$$$:  312-block  5
+    $$$$$:  312-block  6
+    $$$$$:  312-block  7
+       72:  313:            && !endsWith(word, "alli") && !endsWith(word, "ousli")
+       72:  313-block  0
+call    0 returned 72
+call    1 returned 72
+call    2 returned 72
+branch  3 taken 72 (fallthrough)
+branch  4 taken 0 (throw)
+       72:  313-block  1
+branch  5 taken 72 (fallthrough)
+branch  6 taken 0
+       72:  313-block  2
+call    7 returned 72
+call    8 returned 72
+call    9 returned 72
+branch 10 taken 72 (fallthrough)
+branch 11 taken 0 (throw)
+       72:  313-block  3
+branch 12 taken 72 (fallthrough)
+branch 13 taken 0
+    $$$$$:  313-block  4
+    $$$$$:  313-block  5
+    $$$$$:  313-block  6
+    $$$$$:  313-block  7
+       72:  314:            && !endsWith(word, "bli") && !endsWith(word, "fulli")
+       72:  314-block  0
+call    0 returned 72
+call    1 returned 72
+call    2 returned 72
+branch  3 taken 72 (fallthrough)
+branch  4 taken 0 (throw)
+       72:  314-block  1
+branch  5 taken 72 (fallthrough)
+branch  6 taken 0
+       72:  314-block  2
+call    7 returned 72
+call    8 returned 72
+call    9 returned 72
+branch 10 taken 72 (fallthrough)
+branch 11 taken 0 (throw)
+       72:  314-block  3
+branch 12 taken 72 (fallthrough)
+branch 13 taken 0
+    $$$$$:  314-block  4
+    $$$$$:  314-block  5
+    $$$$$:  314-block  6
+    $$$$$:  314-block  7
+     9581:  315:            && !endsWith(word, "lessli"))
+     9509:  315-block  0
+branch  0 taken 72 (fallthrough)
+branch  1 taken 9437
+       72:  315-block  1
+call    2 returned 72
+call    3 returned 72
+call    4 returned 72
+branch  5 taken 72 (fallthrough)
+branch  6 taken 0 (throw)
+       72:  315-block  2
+branch  7 taken 72 (fallthrough)
+branch  8 taken 0
+       72:  315-block  3
+     9437:  315-block  4
+     9509:  315-block  5
+branch  9 taken 72 (fallthrough)
+branch 10 taken 9437
+    $$$$$:  315-block  6
+    $$$$$:  315-block  7
+      144:  316:            if (word.size() > 3 && word.size() - 2 >= startR1
+       72:  316-block  0
+call    0 returned 72
+       72:  316-block  1
+call    1 returned 72
+branch  2 taken 67 (fallthrough)
+branch  3 taken 5
+      144:  317:                && isValidLIEnding(word[word.size() - 3]))
+branch  0 taken 72 (fallthrough)
+branch  1 taken 0
+       67:  317-block  0
+call    2 returned 67
+call    3 returned 67
+call    4 returned 67
+branch  5 taken 60 (fallthrough)
+branch  6 taken 7
+       60:  317-block  1
+       12:  317-block  2
+       72:  317-block  3
+branch  7 taken 60 (fallthrough)
+branch  8 taken 12
+        -:  318:            {
+       60:  319:                word.pop_back();
+       60:  319-block  0
+call    0 returned 60
+       60:  320:                word.pop_back();
+call    0 returned 60
+        -:  321:            }
+        -:  322:    }
+        -:  323:}
+        -:  324:
+        -:  325:/*
+        -:  326:  Step 3:
+        -:  327:
+        -:  328:  If found and in R1, perform the action indicated.
+        -:  329:
+        -:  330:  ational:            replace by ate
+        -:  331:  tional:             replace by tion
+        -:  332:  alize:              replace by al
+        -:  333:  icate, iciti, ical: replace by ic
+        -:  334:  ful, ness:          delete
+        -:  335:  ative:              delete if in R2
+        -:  336:*/
+function _ZN14Porter2Stemmer8internal5step3ERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEmm called 9909 returned 100% blocks executed 86%
+     9909:  337:void Porter2Stemmer::internal::step3(std::string& word, size_t startR1,
+        -:  338:                                     size_t startR2)
+        -:  339:{
+        -:  340:    static const std::pair<meta::util::string_view, meta::util::string_view>
+        -:  341:        subs[] = {{"ational", "ate"},
+        -:  342:                  {"tional", "tion"},
+        -:  343:                  {"alize", "al"},
+        -:  344:                  {"icate", "ic"},
+        -:  345:                  {"iciti", "ic"},
+        -:  346:                  {"ical", "ic"},
+        -:  347:                  {"ful", ""},
+     9909:  348:                  {"ness", ""}};
+     9909:  348-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 9908
+        1:  348-block  1
+call    2 returned 1
+branch  3 taken 1 (fallthrough)
+branch  4 taken 0
+        1:  348-block  2
+call    5 returned 1
+branch  6 taken 1 (fallthrough)
+branch  7 taken 0 (throw)
+        1:  348-block  3
+call    8 returned 1
+call    9 returned 1
+call   10 returned 1
+call   11 returned 1
+call   12 returned 1
+call   13 returned 1
+call   14 returned 1
+call   15 returned 1
+    $$$$$:  348-block  4
+branch 16 never executed
+branch 17 never executed
+    $$$$$:  348-block  5
+call   18 never executed
+        -:  349:
+    88307:  350:    for (auto& sub : subs)
+     9909:  350-block  0
+    88307:  350-block  1
+branch  0 taken 78598 (fallthrough)
+branch  1 taken 9709
+    78398:  350-block  2
+    78598:  351:        if (replaceIfExists(word, sub.first, sub.second, startR1))
+    78598:  351-block  0
+call    0 returned 78598
+branch  1 taken 200 (fallthrough)
+branch  2 taken 78398
+      200:  352:            return;
+      200:  352-block  0
+        -:  353:
+     9709:  354:    replaceIfExists(word, "ative", "", startR2);
+     9709:  354-block  0
+call    0 returned 9709
+call    1 returned 9709
+call    2 returned 9709
+branch  3 taken 9709 (fallthrough)
+branch  4 taken 0 (throw)
+     9709:  354-block  1
+    $$$$$:  354-block  2
+        -:  355:}
+        -:  356:
+        -:  357:/*
+        -:  358:  Step 4:
+        -:  359:
+        -:  360:  If found and in R2, perform the action indicated.
+        -:  361:
+        -:  362:  al ance ence er ic able ible ant ement ment ent ism ate
+        -:  363:    iti ous ive ize
+        -:  364:                              delete
+        -:  365:  ion
+        -:  366:                              delete if preceded by s or t
+        -:  367:*/
+function _ZN14Porter2Stemmer8internal5step4ERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEm called 9909 returned 100% blocks executed 86%
+     9909:  368:void Porter2Stemmer::internal::step4(std::string& word, size_t startR2)
+        -:  369:{
+        -:  370:    static const std::pair<meta::util::string_view, meta::util::string_view>
+        -:  371:        subs[] = {{"al", ""},
+        -:  372:                  {"ance", ""},
+        -:  373:                  {"ence", ""},
+        -:  374:                  {"er", ""},
+        -:  375:                  {"ic", ""},
+        -:  376:                  {"able", ""},
+        -:  377:                  {"ible", ""},
+        -:  378:                  {"ant", ""},
+        -:  379:                  {"ement", ""},
+        -:  380:                  {"ment", ""},
+        -:  381:                  {"ism", ""},
+        -:  382:                  {"ate", ""},
+        -:  383:                  {"iti", ""},
+        -:  384:                  {"ous", ""},
+        -:  385:                  {"ive", ""},
+     9909:  386:                  {"ize", ""}};
+     9909:  386-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 9908
+        1:  386-block  1
+call    2 returned 1
+branch  3 taken 1 (fallthrough)
+branch  4 taken 0
+        1:  386-block  2
+call    5 returned 1
+call    6 returned 1
+call    7 returned 1
+call    8 returned 1
+call    9 returned 1
+call   10 returned 1
+call   11 returned 1
+call   12 returned 1
+call   13 returned 1
+call   14 returned 1
+call   15 returned 1
+call   16 returned 1
+call   17 returned 1
+call   18 returned 1
+call   19 returned 1
+call   20 returned 1
+call   21 returned 1
+        -:  387:
+   156876:  388:    for (auto& sub : subs)
+     9909:  388-block  0
+   156876:  388-block  1
+branch  0 taken 148230 (fallthrough)
+branch  1 taken 8646
+   146967:  388-block  2
+   148230:  389:        if (replaceIfExists(word, sub.first, sub.second, startR2))
+   148230:  389-block  0
+call    0 returned 148230
+branch  1 taken 1263 (fallthrough)
+branch  2 taken 146967
+     1263:  390:            return;
+     1263:  390-block  0
+        -:  391:
+        -:  392:    // make sure we only choose the longest suffix
+     8646:  393:    if (!endsWith(word, "ement") && !endsWith(word, "ment"))
+     8646:  393-block  0
+call    0 returned 8646
+call    1 returned 8646
+call    2 returned 8646
+branch  3 taken 8646 (fallthrough)
+branch  4 taken 0 (throw)
+     8646:  393-block  1
+branch  5 taken 8641 (fallthrough)
+branch  6 taken 5
+     8641:  393-block  2
+call    7 returned 8641
+call    8 returned 8641
+call    9 returned 8641
+branch 10 taken 8641 (fallthrough)
+branch 11 taken 0 (throw)
+     8641:  393-block  3
+branch 12 taken 8619 (fallthrough)
+branch 13 taken 22
+     8619:  393-block  4
+       27:  393-block  5
+     8646:  393-block  6
+branch 14 taken 8619 (fallthrough)
+branch 15 taken 27
+    $$$$$:  393-block  7
+    $$$$$:  393-block  8
+    $$$$$:  393-block  9
+    $$$$$:  393-block 10
+call   16 never executed
+     8619:  394:        if (replaceIfExists(word, "ent", "", startR2))
+     8619:  394-block  0
+call    0 returned 8619
+call    1 returned 8619
+call    2 returned 8619
+branch  3 taken 8619 (fallthrough)
+branch  4 taken 0 (throw)
+     8619:  394-block  1
+branch  5 taken 70 (fallthrough)
+branch  6 taken 8549
+    $$$$$:  394-block  2
+    $$$$$:  394-block  3
+call    7 never executed
+       70:  395:            return;
+       70:  395-block  0
+        -:  396:
+        -:  397:    // short circuit
+     8576:  398:    replaceIfExists(word, "sion", "s", startR2 - 1)
+     8576:  398-block  0
+call    0 returned 8576
+call    1 returned 8576
+call    2 returned 8576
+branch  3 taken 8576 (fallthrough)
+branch  4 taken 0 (throw)
+    $$$$$:  398-block  1
+     8576:  399:        || replaceIfExists(word, "tion", "t", startR2 - 1);
+     8576:  399-block  0
+branch  0 taken 8524 (fallthrough)
+branch  1 taken 52
+     8524:  399-block  1
+call    2 returned 8524
+call    3 returned 8524
+call    4 returned 8524
+branch  5 taken 8524 (fallthrough)
+branch  6 taken 0 (throw)
+     8524:  399-block  2
+branch  7 taken 188 (fallthrough)
+branch  8 taken 8336
+      240:  399-block  3
+     8336:  399-block  4
+     8576:  399-block  5
+    $$$$$:  399-block  6
+    $$$$$:  399-block  7
+        -:  400:}
+        -:  401:
+        -:  402:/*
+        -:  403:  Step 5:
+        -:  404:
+        -:  405:  e     delete if in R2, or in R1 and not preceded by a short syllable
+        -:  406:  l     delete if in R2 and preceded by l
+        -:  407:*/
+function _ZN14Porter2Stemmer8internal5step5ERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEmm called 9909 returned 100% blocks executed 91%
+     9909:  408:void Porter2Stemmer::internal::step5(std::string& word, size_t startR1,
+        -:  409:                                     size_t startR2)
+        -:  410:{
+     9909:  411:    size_t size = word.size();
+     9909:  411-block  0
+call    0 returned 9909
+     9909:  412:    if (word[size - 1] == 'e')
+call    0 returned 9909
+branch  1 taken 1246 (fallthrough)
+branch  2 taken 8663
+        -:  413:    {
+     1246:  414:        if (size - 1 >= startR2)
+     1246:  414-block  0
+branch  0 taken 710 (fallthrough)
+branch  1 taken 536
+      710:  415:            word.pop_back();
+      710:  415-block  0
+call    0 returned 710
+      536:  416:        else if (size - 1 >= startR1 && !isShort(word.substr(0, size - 1)))
+      536:  416-block  0
+branch  0 taken 516 (fallthrough)
+branch  1 taken 20
+      516:  416-block  1
+call    2 returned 516
+branch  3 taken 516 (fallthrough)
+branch  4 taken 0 (throw)
+      516:  416-block  2
+call    5 returned 516
+branch  6 taken 516 (fallthrough)
+branch  7 taken 0 (throw)
+      516:  416-block  3
+branch  8 taken 190 (fallthrough)
+branch  9 taken 326
+      190:  416-block  4
+      346:  416-block  5
+      536:  416-block  6
+branch 10 taken 516 (fallthrough)
+branch 11 taken 20
+      516:  416-block  7
+call   12 returned 516
+      536:  416-block  8
+branch 13 taken 190 (fallthrough)
+branch 14 taken 346
+    $$$$$:  416-block  9
+branch 15 never executed
+branch 16 never executed
+    $$$$$:  416-block 10
+call   17 never executed
+      190:  417:            word.pop_back();
+      190:  417-block  0
+call    0 returned 190
+        -:  418:    }
+     8663:  419:    else if (word[word.size() - 1] == 'l')
+     8663:  419-block  0
+call    0 returned 8663
+call    1 returned 8663
+branch  2 taken 721 (fallthrough)
+branch  3 taken 7942
+        -:  420:    {
+      721:  421:        if (word.size() - 1 >= startR2 && word[word.size() - 2] == 'l')
+      721:  421-block  0
+call    0 returned 721
+branch  1 taken 84 (fallthrough)
+branch  2 taken 637
+       84:  421-block  1
+call    3 returned 84
+call    4 returned 84
+branch  5 taken 18 (fallthrough)
+branch  6 taken 66
+       18:  421-block  2
+      703:  421-block  3
+      721:  421-block  4
+branch  7 taken 18 (fallthrough)
+branch  8 taken 703
+       18:  422:            word.pop_back();
+       18:  422-block  0
+call    0 returned 18
+        -:  423:    }
+     9909:  424:}
+     9909:  424-block  0
+        -:  425:
+        -:  426:/*
+        -:  427:  Determines whether a word ends in a short syllable.
+        -:  428:  Define a short syllable in a word as either
+        -:  429:
+        -:  430:  (a) a vowel followed by a non-vowel other than w, x or Y and preceded by a
+        -:  431:      non-vowel
+        -:  432:  (b) a vowel at the beginning of the word followed by a non-vowel.
+        -:  433:*/
+function _ZN14Porter2Stemmer8internal7isShortERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 651 returned 100% blocks executed 100%
+      651:  434:bool Porter2Stemmer::internal::isShort(const std::string& word)
+        -:  435:{
+      651:  436:    size_t size = word.size();
+      651:  436-block  0
+call    0 returned 651
+        -:  437:
+      651:  438:    if (size >= 3)
+branch  0 taken 645 (fallthrough)
+branch  1 taken 6
+        -:  439:    {
+     1111:  440:        if (!isVowelY(word[size - 3]) && isVowelY(word[size - 2])
+      645:  440-block  0
+call    0 returned 645
+call    1 returned 645
+      466:  440-block  1
+call    2 returned 466
+call    3 returned 466
+branch  4 taken 383 (fallthrough)
+branch  5 taken 83
+      383:  441:            && !isVowelY(word[size - 1]) && word[size - 1] != 'w'
+      383:  441-block  0
+call    0 returned 383
+call    1 returned 383
+branch  2 taken 383 (fallthrough)
+branch  3 taken 0
+      383:  441-block  1
+call    4 returned 383
+branch  5 taken 369 (fallthrough)
+branch  6 taken 14
+     1111:  442:            && word[size - 1] != 'x' && word[size - 1] != 'Y')
+branch  0 taken 466 (fallthrough)
+branch  1 taken 179
+      369:  442-block  0
+call    2 returned 369
+branch  3 taken 353 (fallthrough)
+branch  4 taken 16
+      353:  442-block  1
+call    5 returned 353
+branch  6 taken 353 (fallthrough)
+branch  7 taken 0
+      353:  442-block  2
+      292:  442-block  3
+      645:  442-block  4
+branch  8 taken 353 (fallthrough)
+branch  9 taken 292
+      353:  443:            return true;
+      353:  443-block  0
+        -:  444:    }
+      298:  445:    return size == 2 && isVowelY(word[0]) && !isVowelY(word[1]);
+      298:  445-block  0
+branch  0 taken 6 (fallthrough)
+branch  1 taken 292
+        6:  445-block  1
+call    2 returned 6
+call    3 returned 6
+branch  4 taken 6 (fallthrough)
+branch  5 taken 0
+        6:  445-block  2
+call    6 returned 6
+call    7 returned 6
+branch  8 taken 6 (fallthrough)
+branch  9 taken 0
+        6:  445-block  3
+      292:  445-block  4
+      298:  445-block  5
+        -:  446:}
+        -:  447:
+function _ZN14Porter2Stemmer8internal7specialERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 9916 returned 100% blocks executed 80%
+     9916:  448:bool Porter2Stemmer::internal::special(std::string& word)
+        -:  449:{
+        -:  450:    static const std::unordered_map<meta::util::string_view,
+        -:  451:                                    meta::util::string_view> exceptions
+        -:  452:        = {{"skis", "ski"},
+        -:  453:           {"skies", "sky"},
+        -:  454:           {"dying", "die"},
+        -:  455:           {"lying", "lie"},
+        -:  456:           {"tying", "tie"},
+        -:  457:           {"idly", "idl"},
+        -:  458:           {"gently", "gentl"},
+        -:  459:           {"ugly", "ugli"},
+        -:  460:           {"early", "earli"},
+        -:  461:           {"only", "onli"},
+     9916:  462:           {"singly", "singl"}};
+     9916:  462-block  0
+branch  0 taken 1 (fallthrough)
+branch  1 taken 9915
+        1:  462-block  1
+call    2 returned 1
+branch  3 taken 1 (fallthrough)
+branch  4 taken 0
+        1:  462-block  2
+call    5 returned 1
+call    6 returned 1
+call    7 returned 1
+call    8 returned 1
+call    9 returned 1
+call   10 returned 1
+call   11 returned 1
+call   12 returned 1
+call   13 returned 1
+call   14 returned 1
+call   15 returned 1
+call   16 returned 1
+call   17 returned 1
+branch 18 taken 1 (fallthrough)
+branch 19 taken 0 (throw)
+        1:  462-block  3
+call   20 returned 1
+call   21 returned 1
+call   22 returned 1
+    $$$$$:  462-block  4
+call   23 never executed
+    $$$$$:  462-block  5
+    $$$$$:  462-block  6
+    $$$$$:  462-block  7
+    $$$$$:  462-block  8
+    $$$$$:  462-block  9
+branch 24 never executed
+branch 25 never executed
+    $$$$$:  462-block 10
+call   26 never executed
+        -:  463:
+        -:  464:    // special cases
+     9916:  465:    auto ex = exceptions.find(word);
+     9916:  465-block  0
+call    0 returned 9916
+call    1 returned 9916
+branch  2 taken 9916 (fallthrough)
+branch  3 taken 0 (throw)
+    $$$$$:  465-block  1
+     9916:  466:    if (ex != exceptions.end())
+     9916:  466-block  0
+call    0 returned 9916
+call    1 returned 9916
+branch  2 taken 7 (fallthrough)
+branch  3 taken 9909
+        -:  467:    {
+        7:  468:        word = ex->second.to_string();
+        7:  468-block  0
+call    0 returned 7
+call    1 returned 7
+call    2 returned 7
+branch  3 taken 7 (fallthrough)
+branch  4 taken 0 (throw)
+        7:  468-block  1
+call    5 returned 7
+call    6 returned 7
+call    7 returned 7
+    $$$$$:  468-block  2
+call    8 never executed
+    $$$$$:  468-block  3
+        7:  469:        return true;
+        -:  470:    }
+        -:  471:
+        -:  472:    // invariants
+    19817:  473:    return word.size() >= 3 && word.size() <= 5
+     9909:  473-block  0
+call    0 returned 9909
+     9908:  473-block  1
+call    1 returned 9908
+branch  2 taken 3041 (fallthrough)
+branch  3 taken 6867
+   22858*:  474:           && (word == "sky" || word == "news" || word == "howe"
+branch  0 taken 9908 (fallthrough)
+branch  1 taken 1
+     3041:  474-block  0
+call    2 returned 3041
+branch  3 taken 3041 (fallthrough)
+branch  4 taken 0
+     3041:  474-block  1
+call    5 returned 3041
+branch  6 taken 3041 (fallthrough)
+branch  7 taken 0
+     3041:  474-block  2
+call    8 returned 3041
+branch  9 taken 3041 (fallthrough)
+branch 10 taken 0
+    %%%%%:  474-block  3
+     9909:  474-block  4
+     3041:  475:               || word == "atlas" || word == "cosmos" || word == "bias"
+     3041:  475-block  0
+call    0 returned 3041
+branch  1 taken 3041 (fallthrough)
+branch  2 taken 0
+     3041:  475-block  1
+call    3 returned 3041
+branch  4 taken 3041 (fallthrough)
+branch  5 taken 0
+     3041:  475-block  2
+call    6 returned 3041
+branch  7 taken 3041 (fallthrough)
+branch  8 taken 0
+    12950:  476:               || word == "andes");
+     3041:  476-block  0
+call    0 returned 3041
+branch  1 taken 0 (fallthrough)
+branch  2 taken 3041
+     9909:  476-block  1
+        -:  477:}
+        -:  478:
+function _ZN14Porter2Stemmer8internal8isVowelYEc called 126457 returned 100% blocks executed 100%
+   126457:  479:bool Porter2Stemmer::internal::isVowelY(char ch)
+        -:  480:{
+   111979:  481:    return ch == 'e' || ch == 'a' || ch == 'i' || ch == 'o' || ch == 'u'
+   111979:  481-block  0
+branch  0 taken 101469 (fallthrough)
+branch  1 taken 10510
+   101469:  481-block  1
+branch  2 taken 89892 (fallthrough)
+branch  3 taken 11577
+    89892:  481-block  2
+branch  4 taken 80021 (fallthrough)
+branch  5 taken 9871
+    80021:  481-block  3
+branch  6 taken 75530 (fallthrough)
+branch  7 taken 4491
+   238436:  482:           || ch == 'y';
+   126457:  482-block  0
+branch  0 taken 111979 (fallthrough)
+branch  1 taken 14478
+    75530:  482-block  1
+branch  2 taken 1066 (fallthrough)
+branch  3 taken 74464
+    51993:  482-block  2
+    74464:  482-block  3
+   126457:  482-block  4
+        -:  483:}
+        -:  484:
+function _ZN14Porter2Stemmer8internal7isVowelEc called 1523 returned 100% blocks executed 100%
+     1523:  485:bool Porter2Stemmer::internal::isVowel(char ch)
+        -:  486:{
+     1523:  487:    return ch == 'e' || ch == 'a' || ch == 'i' || ch == 'o' || ch == 'u';
+     1523:  487-block  0
+branch  0 taken 1508 (fallthrough)
+branch  1 taken 15
+     1508:  487-block  1
+branch  2 taken 1382 (fallthrough)
+branch  3 taken 126
+     1382:  487-block  2
+branch  4 taken 1382 (fallthrough)
+branch  5 taken 0
+     1382:  487-block  3
+branch  6 taken 1375 (fallthrough)
+branch  7 taken 7
+     1375:  487-block  4
+branch  8 taken 1 (fallthrough)
+branch  9 taken 1374
+      149:  487-block  5
+     1374:  487-block  6
+     1523:  487-block  7
+        -:  488:}
+        -:  489:
+function _ZN14Porter2Stemmer8internal8endsWithEN4meta4util17basic_string_viewIcSt11char_traitsIcEEES6_ called 82138 returned 100% blocks executed 100%
+    82138:  490:bool Porter2Stemmer::internal::endsWith(meta::util::string_view word,
+        -:  491:                                        meta::util::string_view str)
+        -:  492:{
+    82138:  493:    if (word.size() < str.size())
+    82138:  493-block  0
+call    0 returned 82138
+call    1 returned 82138
+branch  2 taken 4925 (fallthrough)
+branch  3 taken 77213
+     4925:  494:        return false;
+     4925:  494-block  0
+        -:  495:
+    77213:  496:    return word.substr(word.size() - str.size()) == str;
+    77213:  496-block  0
+call    0 returned 77213
+call    1 returned 77213
+call    2 returned 77213
+call    3 returned 77213
+        -:  497:}
+        -:  498:
+function _ZN14Porter2Stemmer8internal12endsInDoubleERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE called 926 returned 100% blocks executed 100%
+      926:  499:bool Porter2Stemmer::internal::endsInDouble(const std::string& word)
+        -:  500:{
+      926:  501:    if (word.size() >= 2)
+      926:  501-block  0
+call    0 returned 926
+branch  1 taken 926 (fallthrough)
+branch  2 taken 0
+        -:  502:    {
+      926:  503:        char a = word[word.size() - 1];
+      926:  503-block  0
+call    0 returned 926
+call    1 returned 926
+      926:  504:        char b = word[word.size() - 2];
+call    0 returned 926
+call    1 returned 926
+        -:  505:
+      926:  506:        if (a == b)
+branch  0 taken 79 (fallthrough)
+branch  1 taken 847
+       79:  507:            return a == 'b' || a == 'd' || a == 'f' || a == 'g' || a == 'm'
+       79:  507-block  0
+branch  0 taken 70 (fallthrough)
+branch  1 taken 9
+       70:  507-block  1
+branch  2 taken 70 (fallthrough)
+branch  3 taken 0
+       70:  507-block  2
+branch  4 taken 70 (fallthrough)
+branch  5 taken 0
+       70:  507-block  3
+branch  6 taken 70 (fallthrough)
+branch  7 taken 0
+      158:  508:                   || a == 'n' || a == 'p' || a == 'r' || a == 't';
+       79:  508-block  0
+branch  0 taken 79 (fallthrough)
+branch  1 taken 0
+       70:  508-block  1
+branch  2 taken 63 (fallthrough)
+branch  3 taken 7
+       63:  508-block  2
+branch  4 taken 62 (fallthrough)
+branch  5 taken 1
+       62:  508-block  3
+branch  6 taken 46 (fallthrough)
+branch  7 taken 16
+       46:  508-block  4
+branch  8 taken 7 (fallthrough)
+branch  9 taken 39
+       40:  508-block  5
+       39:  508-block  6
+       79:  508-block  7
+        -:  509:    }
+        -:  510:
+      847:  511:    return false;
+      847:  511-block  0
+        -:  512:}
+        -:  513:
+function _ZN14Porter2Stemmer8internal15replaceIfExistsERNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEN4meta4util17basic_string_viewIcS4_EESB_m called 548094 returned 100% blocks executed 100%
+   548094:  514:bool Porter2Stemmer::internal::replaceIfExists(
+        -:  515:    std::string& word, meta::util::string_view suffix,
+        -:  516:    meta::util::string_view replacement, size_t start)
+        -:  517:{
+   548094:  518:    if (suffix.size() > word.size())
+   548094:  518-block  0
+call    0 returned 548094
+call    1 returned 548094
+branch  2 taken 81297 (fallthrough)
+branch  3 taken 466797
+    81297:  519:        return false;
+    81297:  519-block  0
+        -:  520:
+   466797:  521:    size_t idx = word.size() - suffix.size();
+   466797:  521-block  0
+call    0 returned 466797
+call    1 returned 466797
+   466797:  522:    if (idx < start)
+branch  0 taken 255519 (fallthrough)
+branch  1 taken 211278
+   255519:  523:        return false;
+   255519:  523-block  0
+        -:  524:
+   211278:  525:    auto diff = static_cast<std::string::iterator::difference_type>(idx);
+   211278:  526:    if (std::equal(word.begin() + diff, word.end(), suffix.begin()))
+   211278:  526-block  0
+call    0 returned 211278
+call    1 returned 211278
+call    2 returned 211278
+call    3 returned 211278
+call    4 returned 211278
+branch  5 taken 211278 (fallthrough)
+branch  6 taken 0 (throw)
+   211278:  526-block  1
+branch  7 taken 3389 (fallthrough)
+branch  8 taken 207889
+        -:  527:    {
+     3389:  528:        word.replace(idx, suffix.size(), replacement.data());
+     3389:  528-block  0
+call    0 returned 3389
+call    1 returned 3389
+call    2 returned 3389
+     3389:  529:        return true;
+        -:  530:    }
+   207889:  531:    return false;
+   207889:  531-block  0
+        -:  532:}
+        -:  533:
+function _ZN14Porter2Stemmer8internal15isValidLIEndingEc called 67 returned 100% blocks executed 100%
+       67:  534:bool Porter2Stemmer::internal::isValidLIEnding(char ch)
+        -:  535:{
+       67:  536:    return ch == 'c' || ch == 'd' || ch == 'e' || ch == 'g' || ch == 'h'
+       67:  536-block  0
+branch  0 taken 63 (fallthrough)
+branch  1 taken 4
+       63:  536-block  1
+branch  2 taken 38 (fallthrough)
+branch  3 taken 25
+       38:  536-block  2
+branch  4 taken 37 (fallthrough)
+branch  5 taken 1
+       37:  536-block  3
+branch  6 taken 35 (fallthrough)
+branch  7 taken 2
+      134:  537:           || ch == 'k' || ch == 'm' || ch == 'n' || ch == 'r' || ch == 't';
+       67:  537-block  0
+branch  0 taken 67 (fallthrough)
+branch  1 taken 0
+       35:  537-block  1
+branch  2 taken 34 (fallthrough)
+branch  3 taken 1
+       34:  537-block  2
+branch  4 taken 33 (fallthrough)
+branch  5 taken 1
+       33:  537-block  3
+branch  6 taken 33 (fallthrough)
+branch  7 taken 0
+       33:  537-block  4
+branch  8 taken 24 (fallthrough)
+branch  9 taken 9
+       24:  537-block  5
+branch 10 taken 17 (fallthrough)
+branch 11 taken 7
+       60:  537-block  6
+        7:  537-block  7
+       67:  537-block  8
+        -:  538:}
+        -:  539:
+function _ZN14Porter2Stemmer8internal13containsVowelERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEmm called 37711 returned 100% blocks executed 100%
+    37711:  540:bool Porter2Stemmer::internal::containsVowel(const std::string& word,
+        -:  541:                                             size_t start, size_t end)
+        -:  542:{
+    37711:  543:    if (end <= word.size())
+    37711:  543-block  0
+call    0 returned 37711
+branch  1 taken 35000 (fallthrough)
+branch  2 taken 2711
+        -:  544:    {
+    74574:  545:        for (size_t i = start; i < end; ++i)
+    35000:  545-block  0
+    74574:  545-block  1
+branch  0 taken 64273 (fallthrough)
+branch  1 taken 10301
+    39574:  545-block  2
+    64273:  546:            if (isVowelY(word[i]))
+    64273:  546-block  0
+call    0 returned 64273
+call    1 returned 64273
+branch  2 taken 24699 (fallthrough)
+branch  3 taken 39574
+    24699:  547:                return true;
+    24699:  547-block  0
+        -:  548:    }
+    13012:  549:    return false;
+    13012:  549-block  0
+        -:  550:}

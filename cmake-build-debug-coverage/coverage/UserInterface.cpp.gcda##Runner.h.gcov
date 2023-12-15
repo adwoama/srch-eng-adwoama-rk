@@ -1,0 +1,49 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/Runner.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/UserInterface.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/UserInterface.cpp.gcda
+        -:    0:Runs:1
+        -:    1://
+        -:    2:// Created by robot on 4/13/2021.
+        -:    3://
+        -:    4:
+        -:    5:#ifndef SEARCH_ENGINE_RUNNER_H
+        -:    6:#define SEARCH_ENGINE_RUNNER_H
+        -:    7:
+        -:    8:#include "DSAVLTree.h"
+        -:    9:#include "DSHashTable.h"
+        -:   10:
+        -:   11:#include <string>
+        -:   12:#include <set>
+        -:   13:#include <vector>
+        -:   14:
+        -:   15:class Runner {
+        -:   16:private:
+        -:   17:    DSAVLTree<string, string, int> keywords;
+        -:   18:    DSHashTable<string,string> authors;
+        -:   19:    string stopWords[641];
+        -:   20:    string filePath;
+        -:   21:    int numDocuments;
+        -:   22:    double avgWordCount;
+        -:   23:public:
+        -:   24:    Runner();
+        -:   25:    void MakeDocList(string & folder);
+        -:   26:    vector<string> Search(string& word);
+        -:   27:    void Output(string& word, vector<string>& docIds);
+        -:   28:    void output(vector<string>& docIds);
+        -:   29:    void getInput(string&);
+        -:   30:    bool removeStops(string&);
+        -:   31:    void stemming(string&);
+        -:   32:    int binarySearch(string&, int);
+        -:   33:    DSAVLTree<string, string, int>& getKeyWords();
+        -:   34:    DSHashTable<string,string>& getAuthors();
+function _ZN6Runner15getAvgWordCountEv called 0 returned 0% blocks executed 0%
+    #####:   35:    inline double getAvgWordCount(){return avgWordCount;}
+    %%%%%:   35-block  0
+function _ZN6Runner15getNumDocumentsEv called 0 returned 0% blocks executed 0%
+    #####:   36:    inline int getNumDocuments(){return numDocuments;}
+    %%%%%:   36-block  0
+        -:   37:    void clearIndex();
+        -:   38:};
+        -:   39:
+        -:   40:
+        -:   41:#endif //SEARCH_ENGINE_RUNNER_H

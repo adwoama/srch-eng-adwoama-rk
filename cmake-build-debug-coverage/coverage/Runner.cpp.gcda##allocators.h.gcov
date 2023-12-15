@@ -1,0 +1,865 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/include/rapidjson/allocators.h
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/Runner.cpp.gcda
+        -:    0:Runs:1
+        -:    1:// Tencent is pleased to support the open source community by making RapidJSON available.
+        -:    2:// 
+        -:    3:// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip.
+        -:    4://
+        -:    5:// Licensed under the MIT License (the "License"); you may not use this file except
+        -:    6:// in compliance with the License. You may obtain a copy of the License at
+        -:    7://
+        -:    8:// http://opensource.org/licenses/MIT
+        -:    9://
+        -:   10:// Unless required by applicable law or agreed to in writing, software distributed 
+        -:   11:// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR 
+        -:   12:// CONDITIONS OF ANY KIND, either express or implied. See the License for the 
+        -:   13:// specific language governing permissions and limitations under the License.
+        -:   14:
+        -:   15:#ifndef RAPIDJSON_ALLOCATORS_H_
+        -:   16:#define RAPIDJSON_ALLOCATORS_H_
+        -:   17:
+        -:   18:#include "rapidjson.h"
+        -:   19:#include "internal/meta.h"
+        -:   20:
+        -:   21:#include <memory>
+        -:   22:
+        -:   23:#if RAPIDJSON_HAS_CXX11
+        -:   24:#include <type_traits>
+        -:   25:#endif
+        -:   26:
+        -:   27:RAPIDJSON_NAMESPACE_BEGIN
+        -:   28:
+        -:   29:///////////////////////////////////////////////////////////////////////////////
+        -:   30:// Allocator
+        -:   31:
+        -:   32:/*! \class rapidjson::Allocator
+        -:   33:    \brief Concept for allocating, resizing and freeing memory block.
+        -:   34:    
+        -:   35:    Note that Malloc() and Realloc() are non-static but Free() is static.
+        -:   36:    
+        -:   37:    So if an allocator need to support Free(), it needs to put its pointer in 
+        -:   38:    the header of memory block.
+        -:   39:
+        -:   40:\code
+        -:   41:concept Allocator {
+        -:   42:    static const bool kNeedFree;    //!< Whether this allocator needs to call Free().
+        -:   43:
+        -:   44:    // Allocate a memory block.
+        -:   45:    // \param size of the memory block in bytes.
+        -:   46:    // \returns pointer to the memory block.
+        -:   47:    void* Malloc(size_t size);
+        -:   48:
+        -:   49:    // Resize a memory block.
+        -:   50:    // \param originalPtr The pointer to current memory block. Null pointer is permitted.
+        -:   51:    // \param originalSize The current size in bytes. (Design issue: since some allocator may not book-keep this, explicitly pass to it can save memory.)
+        -:   52:    // \param newSize the new size in bytes.
+        -:   53:    void* Realloc(void* originalPtr, size_t originalSize, size_t newSize);
+        -:   54:
+        -:   55:    // Free a memory block.
+        -:   56:    // \param pointer to the memory block. Null pointer is permitted.
+        -:   57:    static void Free(void *ptr);
+        -:   58:};
+        -:   59:\endcode
+        -:   60:*/
+        -:   61:
+        -:   62:
+        -:   63:/*! \def RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY
+        -:   64:    \ingroup RAPIDJSON_CONFIG
+        -:   65:    \brief User-defined kDefaultChunkCapacity definition.
+        -:   66:
+        -:   67:    User can define this as any \c size that is a power of 2.
+        -:   68:*/
+        -:   69:
+        -:   70:#ifndef RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY
+        -:   71:#define RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY (64 * 1024)
+        -:   72:#endif
+        -:   73:
+        -:   74:
+        -:   75:///////////////////////////////////////////////////////////////////////////////
+        -:   76:// CrtAllocator
+        -:   77:
+        -:   78://! C-runtime library allocator.
+        -:   79:/*! This class is just wrapper for standard C library memory routines.
+        -:   80:    \note implements Allocator concept
+        -:   81:*/
+        -:   82:class CrtAllocator {
+        -:   83:public:
+        -:   84:    static const bool kNeedFree = true;
+function _ZN9rapidjson12CrtAllocator6MallocEm called 14 returned 100% blocks executed 75%
+       14:   85:    void* Malloc(size_t size) { 
+       14:   86:        if (size) //  behavior of malloc(0) is implementation defined.
+       14:   86-block  0
+branch  0 taken 14 (fallthrough)
+branch  1 taken 0
+       14:   87:            return RAPIDJSON_MALLOC(size);
+       14:   87-block  0
+        -:   88:        else
+    #####:   89:            return NULL; // standardize to returning NULL.
+    %%%%%:   89-block  0
+        -:   90:    }
+function _ZN9rapidjson12CrtAllocator7ReallocEPvmm called 50 returned 100% blocks executed 75%
+       50:   91:    void* Realloc(void* originalPtr, size_t originalSize, size_t newSize) {
+        -:   92:        (void)originalSize;
+       50:   93:        if (newSize == 0) {
+       50:   93-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 50
+    #####:   94:            RAPIDJSON_FREE(originalPtr);
+    #####:   95:            return NULL;
+    %%%%%:   95-block  0
+        -:   96:        }
+       50:   97:        return RAPIDJSON_REALLOC(originalPtr, newSize);
+       50:   97-block  0
+        -:   98:    }
+function _ZN9rapidjson12CrtAllocator4FreeEPv called 29 returned 100% blocks executed 100%
+       29:   99:    static void Free(void *ptr) RAPIDJSON_NOEXCEPT { RAPIDJSON_FREE(ptr); }
+        -:  100:
+        -:  101:    bool operator==(const CrtAllocator&) const RAPIDJSON_NOEXCEPT {
+        -:  102:        return true;
+        -:  103:    }
+        -:  104:    bool operator!=(const CrtAllocator&) const RAPIDJSON_NOEXCEPT {
+        -:  105:        return false;
+        -:  106:    }
+        -:  107:};
+        -:  108:
+        -:  109:///////////////////////////////////////////////////////////////////////////////
+        -:  110:// MemoryPoolAllocator
+        -:  111:
+        -:  112://! Default memory allocator used by the parser and DOM.
+        -:  113:/*! This allocator allocate memory blocks from pre-allocated memory chunks. 
+        -:  114:
+        -:  115:    It does not free memory blocks. And Realloc() only allocate new memory.
+        -:  116:
+        -:  117:    The memory chunks are allocated by BaseAllocator, which is CrtAllocator by default.
+        -:  118:
+        -:  119:    User may also supply a buffer as the first chunk.
+        -:  120:
+        -:  121:    If the user-buffer is full then additional chunks are allocated by BaseAllocator.
+        -:  122:
+        -:  123:    The user-buffer is not deallocated by this allocator.
+        -:  124:
+        -:  125:    \tparam BaseAllocator the allocator type for allocating memory chunks. Default is CrtAllocator.
+        -:  126:    \note implements Allocator concept
+        -:  127:*/
+        -:  128:template <typename BaseAllocator = CrtAllocator>
+        -:  129:class MemoryPoolAllocator {
+        -:  130:    //! Chunk header for perpending to each chunk.
+        -:  131:    /*! Chunks are stored as a singly linked list.
+        -:  132:    */
+        -:  133:    struct ChunkHeader {
+        -:  134:        size_t capacity;    //!< Capacity of the chunk in bytes (excluding the header itself).
+        -:  135:        size_t size;        //!< Current size of allocated memory in bytes.
+        -:  136:        ChunkHeader *next;  //!< Next chunk in the linked list.
+        -:  137:    };
+        -:  138:
+        -:  139:    struct SharedData {
+        -:  140:        ChunkHeader *chunkHead;  //!< Head of the chunk linked-list. Only the head chunk serves allocation.
+        -:  141:        BaseAllocator* ownBaseAllocator; //!< base allocator created by this object.
+        -:  142:        size_t refcount;
+        -:  143:        bool ownBuffer;
+        -:  144:    };
+        -:  145:
+        -:  146:    static const size_t SIZEOF_SHARED_DATA = RAPIDJSON_ALIGN(sizeof(SharedData));
+        -:  147:    static const size_t SIZEOF_CHUNK_HEADER = RAPIDJSON_ALIGN(sizeof(ChunkHeader));
+        -:  148:
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEE12GetChunkHeadEPNS2_10SharedDataE called 5 returned 100% blocks executed 100%
+        5:  149:    static inline ChunkHeader *GetChunkHead(SharedData *shared)
+        -:  150:    {
+        5:  151:        return reinterpret_cast<ChunkHeader*>(reinterpret_cast<uint8_t*>(shared) + SIZEOF_SHARED_DATA);
+        5:  151-block  0
+        -:  152:    }
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEE14GetChunkBufferEPNS2_10SharedDataE called 2903 returned 100% blocks executed 100%
+     2903:  153:    static inline uint8_t *GetChunkBuffer(SharedData *shared)
+        -:  154:    {
+     2903:  155:        return reinterpret_cast<uint8_t*>(shared->chunkHead) + SIZEOF_CHUNK_HEADER;
+     2903:  155-block  0
+        -:  156:    }
+        -:  157:
+        -:  158:    static const size_t kDefaultChunkCapacity = RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY; //!< Default chunk capacity.
+        -:  159:
+        -:  160:public:
+        -:  161:    static const bool kNeedFree = false;    //!< Tell users that no need to call Free() with this allocator. (concept Allocator)
+        -:  162:    static const bool kRefCounted = true;   //!< Tell users that this allocator is reference counted on copy
+        -:  163:
+        -:  164:    //! Constructor with chunkSize.
+        -:  165:    /*! \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+        -:  166:        \param baseAllocator The allocator for allocating memory chunks.
+        -:  167:    */
+        -:  168:    explicit
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEEC2EmPS1_ called 5 returned 100% blocks executed 69%
+        5:  169:    MemoryPoolAllocator(size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) : 
+        -:  170:        chunk_capacity_(chunkSize),
+       5*:  171:        baseAllocator_(baseAllocator ? baseAllocator : RAPIDJSON_NEW(BaseAllocator)()),
+        5:  171-block  0
+call    0 returned 5
+    %%%%%:  171-block  1
+      10*:  172:        shared_(static_cast<SharedData*>(baseAllocator_ ? baseAllocator_->Malloc(SIZEOF_SHARED_DATA + SIZEOF_CHUNK_HEADER) : 0))
+        5:  172-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 0
+        5:  172-block  1
+branch  2 taken 5 (fallthrough)
+branch  3 taken 0
+        5:  172-block  2
+call    4 returned 5
+    %%%%%:  172-block  3
+        -:  173:    {
+       5*:  174:        RAPIDJSON_ASSERT(baseAllocator_ != 0);
+        5:  174-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5
+    %%%%%:  174-block  1
+call    2 never executed
+       5*:  175:        RAPIDJSON_ASSERT(shared_ != 0);
+        5:  175-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5
+    %%%%%:  175-block  1
+call    2 never executed
+        5:  176:        if (baseAllocator) {
+        5:  176-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5
+    #####:  177:            shared_->ownBaseAllocator = 0;
+    %%%%%:  177-block  0
+        -:  178:        }
+        -:  179:        else {
+        5:  180:            shared_->ownBaseAllocator = baseAllocator_;
+        5:  180-block  0
+        -:  181:        }
+        5:  182:        shared_->chunkHead = GetChunkHead(shared_);
+        5:  182-block  0
+call    0 returned 5
+        5:  183:        shared_->chunkHead->capacity = 0;
+        5:  184:        shared_->chunkHead->size = 0;
+        5:  185:        shared_->chunkHead->next = 0;
+        5:  186:        shared_->ownBuffer = true;
+        5:  187:        shared_->refcount = 1;
+        5:  188:    }
+        -:  189:
+        -:  190:    //! Constructor with user-supplied buffer.
+        -:  191:    /*! The user buffer will be used firstly. When it is full, memory pool allocates new chunk with chunk size.
+        -:  192:
+        -:  193:        The user buffer will not be deallocated when this allocator is destructed.
+        -:  194:
+        -:  195:        \param buffer User supplied buffer.
+        -:  196:        \param size Size of the buffer in bytes. It must at least larger than sizeof(ChunkHeader).
+        -:  197:        \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+        -:  198:        \param baseAllocator The allocator for allocating memory chunks.
+        -:  199:    */
+        -:  200:    MemoryPoolAllocator(void *buffer, size_t size, size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) :
+        -:  201:        chunk_capacity_(chunkSize),
+        -:  202:        baseAllocator_(baseAllocator),
+        -:  203:        shared_(static_cast<SharedData*>(AlignBuffer(buffer, size)))
+        -:  204:    {
+        -:  205:        RAPIDJSON_ASSERT(size >= SIZEOF_SHARED_DATA + SIZEOF_CHUNK_HEADER);
+        -:  206:        shared_->chunkHead = GetChunkHead(shared_);
+        -:  207:        shared_->chunkHead->capacity = size - SIZEOF_SHARED_DATA - SIZEOF_CHUNK_HEADER;
+        -:  208:        shared_->chunkHead->size = 0;
+        -:  209:        shared_->chunkHead->next = 0;
+        -:  210:        shared_->ownBaseAllocator = 0;
+        -:  211:        shared_->ownBuffer = false;
+        -:  212:        shared_->refcount = 1;
+        -:  213:    }
+        -:  214:
+        -:  215:    MemoryPoolAllocator(const MemoryPoolAllocator& rhs) RAPIDJSON_NOEXCEPT :
+        -:  216:        chunk_capacity_(rhs.chunk_capacity_),
+        -:  217:        baseAllocator_(rhs.baseAllocator_),
+        -:  218:        shared_(rhs.shared_)
+        -:  219:    {
+        -:  220:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+        -:  221:        ++shared_->refcount;
+        -:  222:    }
+        -:  223:    MemoryPoolAllocator& operator=(const MemoryPoolAllocator& rhs) RAPIDJSON_NOEXCEPT
+        -:  224:    {
+        -:  225:        RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
+        -:  226:        ++rhs.shared_->refcount;
+        -:  227:        this->~MemoryPoolAllocator();
+        -:  228:        baseAllocator_ = rhs.baseAllocator_;
+        -:  229:        chunk_capacity_ = rhs.chunk_capacity_;
+        -:  230:        shared_ = rhs.shared_;
+        -:  231:        return *this;
+        -:  232:    }
+        -:  233:
+        -:  234:#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+        -:  235:    MemoryPoolAllocator(MemoryPoolAllocator&& rhs) RAPIDJSON_NOEXCEPT :
+        -:  236:        chunk_capacity_(rhs.chunk_capacity_),
+        -:  237:        baseAllocator_(rhs.baseAllocator_),
+        -:  238:        shared_(rhs.shared_)
+        -:  239:    {
+        -:  240:        RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
+        -:  241:        rhs.shared_ = 0;
+        -:  242:    }
+        -:  243:    MemoryPoolAllocator& operator=(MemoryPoolAllocator&& rhs) RAPIDJSON_NOEXCEPT
+        -:  244:    {
+        -:  245:        RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
+        -:  246:        this->~MemoryPoolAllocator();
+        -:  247:        baseAllocator_ = rhs.baseAllocator_;
+        -:  248:        chunk_capacity_ = rhs.chunk_capacity_;
+        -:  249:        shared_ = rhs.shared_;
+        -:  250:        rhs.shared_ = 0;
+        -:  251:        return *this;
+        -:  252:    }
+        -:  253:#endif
+        -:  254:
+        -:  255:    //! Destructor.
+        -:  256:    /*! This deallocates all memory chunks, excluding the user-supplied buffer.
+        -:  257:    */
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEED2Ev called 5 returned 100% blocks executed 75%
+        5:  258:    ~MemoryPoolAllocator() RAPIDJSON_NOEXCEPT {
+        5:  259:        if (!shared_) {
+        5:  259-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5
+        -:  260:            // do nothing if moved
+    #####:  261:            return;
+    %%%%%:  261-block  0
+    %%%%%:  261-block  1
+        -:  262:        }
+        5:  263:        if (shared_->refcount > 1) {
+        5:  263-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5
+    #####:  264:            --shared_->refcount;
+    #####:  265:            return;
+    %%%%%:  265-block  0
+        -:  266:        }
+        5:  267:        Clear();
+        5:  267-block  0
+call    0 returned 5
+        5:  268:        BaseAllocator *a = shared_->ownBaseAllocator;
+        5:  269:        if (shared_->ownBuffer) {
+branch  0 taken 5 (fallthrough)
+branch  1 taken 0
+        5:  270:            baseAllocator_->Free(shared_);
+        5:  270-block  0
+call    0 returned 5
+        -:  271:        }
+        5:  272:        RAPIDJSON_DELETE(a);
+        5:  272-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 0
+        5:  272-block  1
+call    2 returned 5
+        5:  273:    }
+        5:  273-block  0
+        -:  274:
+        -:  275:    //! Deallocates all memory chunks, excluding the first/user one.
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEE5ClearEv called 5 returned 100% blocks executed 86%
+        5:  276:    void Clear() RAPIDJSON_NOEXCEPT {
+       5*:  277:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+        5:  277-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 5
+    %%%%%:  277-block  1
+call    2 never executed
+        9:  278:        for (;;) {
+       14:  279:            ChunkHeader* c = shared_->chunkHead;
+       14:  280:            if (!c->next) {
+       14:  280-block  0
+branch  0 taken 5 (fallthrough)
+branch  1 taken 9
+        5:  281:                break;
+        5:  281-block  0
+        -:  282:            }
+        9:  283:            shared_->chunkHead = c->next;
+        9:  284:            baseAllocator_->Free(c);
+        9:  284-block  0
+call    0 returned 9
+        -:  285:        }
+        5:  286:        shared_->chunkHead->size = 0;
+        5:  287:    }
+        -:  288:
+        -:  289:    //! Computes the total capacity of allocated memory chunks.
+        -:  290:    /*! \return total capacity in bytes.
+        -:  291:    */
+        -:  292:    size_t Capacity() const RAPIDJSON_NOEXCEPT {
+        -:  293:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+        -:  294:        size_t capacity = 0;
+        -:  295:        for (ChunkHeader* c = shared_->chunkHead; c != 0; c = c->next)
+        -:  296:            capacity += c->capacity;
+        -:  297:        return capacity;
+        -:  298:    }
+        -:  299:
+        -:  300:    //! Computes the memory blocks allocated.
+        -:  301:    /*! \return total used bytes.
+        -:  302:    */
+        -:  303:    size_t Size() const RAPIDJSON_NOEXCEPT {
+        -:  304:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+        -:  305:        size_t size = 0;
+        -:  306:        for (ChunkHeader* c = shared_->chunkHead; c != 0; c = c->next)
+        -:  307:            size += c->size;
+        -:  308:        return size;
+        -:  309:    }
+        -:  310:
+        -:  311:    //! Whether the allocator is shared.
+        -:  312:    /*! \return true or false.
+        -:  313:    */
+        -:  314:    bool Shared() const RAPIDJSON_NOEXCEPT {
+        -:  315:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+        -:  316:        return shared_->refcount > 1;
+        -:  317:    }
+        -:  318:
+        -:  319:    //! Allocates a memory block. (concept Allocator)
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEE6MallocEm called 2903 returned 100% blocks executed 71%
+     2903:  320:    void* Malloc(size_t size) {
+    2903*:  321:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+     2903:  321-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2903
+    %%%%%:  321-block  1
+call    2 never executed
+     2903:  322:        if (!size)
+     2903:  322-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2903
+    #####:  323:            return NULL;
+    %%%%%:  323-block  0
+        -:  324:
+     2903:  325:        size = RAPIDJSON_ALIGN(size);
+     2903:  326:        if (RAPIDJSON_UNLIKELY(shared_->chunkHead->size + size > shared_->chunkHead->capacity))
+     2903:  326-block  0
+branch  0 taken 9 (fallthrough)
+branch  1 taken 2894
+       9*:  327:            if (!AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size))
+        9:  327-block  0
+branch  0 taken 9 (fallthrough)
+branch  1 taken 0
+        9:  327-block  1
+    %%%%%:  327-block  2
+        9:  327-block  3
+call    2 returned 9
+branch  3 taken 0 (fallthrough)
+branch  4 taken 9
+    #####:  328:                return NULL;
+    %%%%%:  328-block  0
+        -:  329:
+     2903:  330:        void *buffer = GetChunkBuffer(shared_) + shared_->chunkHead->size;
+     2903:  330-block  0
+call    0 returned 2903
+     2903:  331:        shared_->chunkHead->size += size;
+     2903:  332:        return buffer;
+        -:  333:    }
+        -:  334:
+        -:  335:    //! Resizes a memory block (concept Allocator)
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEE7ReallocEPvmm called 1638 returned 100% blocks executed 20%
+     1638:  336:    void* Realloc(void* originalPtr, size_t originalSize, size_t newSize) {
+     1638:  337:        if (originalPtr == 0)
+     1638:  337-block  0
+branch  0 taken 1638 (fallthrough)
+branch  1 taken 0
+     1638:  338:            return Malloc(newSize);
+     1638:  338-block  0
+call    0 returned 1638
+        -:  339:
+    #####:  340:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+    %%%%%:  340-block  0
+branch  0 never executed
+branch  1 never executed
+    %%%%%:  340-block  1
+call    2 never executed
+    #####:  341:        if (newSize == 0)
+    %%%%%:  341-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  342:            return NULL;
+    %%%%%:  342-block  0
+        -:  343:
+    #####:  344:        originalSize = RAPIDJSON_ALIGN(originalSize);
+    #####:  345:        newSize = RAPIDJSON_ALIGN(newSize);
+        -:  346:
+        -:  347:        // Do not shrink if new size is smaller than original
+    #####:  348:        if (originalSize >= newSize)
+    %%%%%:  348-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  349:            return originalPtr;
+    %%%%%:  349-block  0
+        -:  350:
+        -:  351:        // Simply expand it if it is the last allocation and there is sufficient space
+    #####:  352:        if (originalPtr == GetChunkBuffer(shared_) + shared_->chunkHead->size - originalSize) {
+    %%%%%:  352-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  353:            size_t increment = static_cast<size_t>(newSize - originalSize);
+    #####:  354:            if (shared_->chunkHead->size + increment <= shared_->chunkHead->capacity) {
+    %%%%%:  354-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  355:                shared_->chunkHead->size += increment;
+    #####:  356:                return originalPtr;
+    %%%%%:  356-block  0
+        -:  357:            }
+        -:  358:        }
+        -:  359:
+        -:  360:        // Realloc process: allocate and copy memory, do not free original buffer.
+    #####:  361:        if (void* newBuffer = Malloc(newSize)) {
+    %%%%%:  361-block  0
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  362:            if (originalSize)
+    %%%%%:  362-block  0
+branch  0 never executed
+branch  1 never executed
+    #####:  363:                std::memcpy(newBuffer, originalPtr, originalSize);
+    %%%%%:  363-block  0
+    #####:  364:            return newBuffer;
+    %%%%%:  364-block  0
+        -:  365:        }
+        -:  366:        else
+    #####:  367:            return NULL;
+    %%%%%:  367-block  0
+        -:  368:    }
+        -:  369:
+        -:  370:    //! Frees a memory block (concept Allocator)
+        -:  371:    static void Free(void *ptr) RAPIDJSON_NOEXCEPT { (void)ptr; } // Do nothing
+        -:  372:
+        -:  373:    //! Compare (equality) with another MemoryPoolAllocator
+        -:  374:    bool operator==(const MemoryPoolAllocator& rhs) const RAPIDJSON_NOEXCEPT {
+        -:  375:        RAPIDJSON_NOEXCEPT_ASSERT(shared_->refcount > 0);
+        -:  376:        RAPIDJSON_NOEXCEPT_ASSERT(rhs.shared_->refcount > 0);
+        -:  377:        return shared_ == rhs.shared_;
+        -:  378:    }
+        -:  379:    //! Compare (inequality) with another MemoryPoolAllocator
+        -:  380:    bool operator!=(const MemoryPoolAllocator& rhs) const RAPIDJSON_NOEXCEPT {
+        -:  381:        return !operator==(rhs);
+        -:  382:    }
+        -:  383:
+        -:  384:private:
+        -:  385:    //! Creates a new chunk.
+        -:  386:    /*! \param capacity Capacity of the chunk in bytes.
+        -:  387:        \return true if success.
+        -:  388:    */
+function _ZN9rapidjson19MemoryPoolAllocatorINS_12CrtAllocatorEE8AddChunkEm called 9 returned 100% blocks executed 62%
+        9:  389:    bool AddChunk(size_t capacity) {
+        9:  390:        if (!baseAllocator_)
+        9:  390-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 9
+    #####:  391:            shared_->ownBaseAllocator = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+    %%%%%:  391-block  0
+call    0 never executed
+        9:  392:        if (ChunkHeader* chunk = static_cast<ChunkHeader*>(baseAllocator_->Malloc(SIZEOF_CHUNK_HEADER + capacity))) {
+        9:  392-block  0
+call    0 returned 9
+branch  1 taken 9 (fallthrough)
+branch  2 taken 0
+        9:  393:            chunk->capacity = capacity;
+        9:  394:            chunk->size = 0;
+        9:  395:            chunk->next = shared_->chunkHead;
+        9:  396:            shared_->chunkHead = chunk;
+        9:  397:            return true;
+        9:  397-block  0
+        -:  398:        }
+        -:  399:        else
+    #####:  400:            return false;
+    %%%%%:  400-block  0
+        -:  401:    }
+        -:  402:
+        -:  403:    static inline void* AlignBuffer(void* buf, size_t &size)
+        -:  404:    {
+        -:  405:        RAPIDJSON_NOEXCEPT_ASSERT(buf != 0);
+        -:  406:        const uintptr_t mask = sizeof(void*) - 1;
+        -:  407:        const uintptr_t ubuf = reinterpret_cast<uintptr_t>(buf);
+        -:  408:        if (RAPIDJSON_UNLIKELY(ubuf & mask)) {
+        -:  409:            const uintptr_t abuf = (ubuf + mask) & ~mask;
+        -:  410:            RAPIDJSON_ASSERT(size >= abuf - ubuf);
+        -:  411:            buf = reinterpret_cast<void*>(abuf);
+        -:  412:            size -= abuf - ubuf;
+        -:  413:        }
+        -:  414:        return buf;
+        -:  415:    }
+        -:  416:
+        -:  417:    size_t chunk_capacity_;     //!< The minimum capacity of chunk when they are allocated.
+        -:  418:    BaseAllocator* baseAllocator_;  //!< base allocator for allocating memory chunks.
+        -:  419:    SharedData *shared_;        //!< The shared data of the allocator
+        -:  420:};
+        -:  421:
+        -:  422:namespace internal {
+        -:  423:    template<typename, typename = void>
+        -:  424:    struct IsRefCounted :
+        -:  425:        public FalseType
+        -:  426:    { };
+        -:  427:    template<typename T>
+        -:  428:    struct IsRefCounted<T, typename internal::EnableIfCond<T::kRefCounted>::Type> :
+        -:  429:        public TrueType
+        -:  430:    { };
+        -:  431:}
+        -:  432:
+        -:  433:template<typename T, typename A>
+function _ZN9rapidjson7ReallocINS_13GenericMemberINS_4UTF8IcEENS_19MemoryPoolAllocatorINS_12CrtAllocatorEEEEES6_EEPT_RT0_S9_mm called 1638 returned 100% blocks executed 86%
+     1638:  434:inline T* Realloc(A& a, T* old_p, size_t old_n, size_t new_n)
+        -:  435:{
+    1638*:  436:    RAPIDJSON_NOEXCEPT_ASSERT(old_n <= SIZE_MAX / sizeof(T) && new_n <= SIZE_MAX / sizeof(T));
+     1638:  436-block  0
+branch  0 taken 1638 (fallthrough)
+branch  1 taken 0
+     1638:  436-block  1
+branch  2 taken 1638 (fallthrough)
+branch  3 taken 0
+    %%%%%:  436-block  2
+call    4 never executed
+     1638:  437:    return static_cast<T*>(a.Realloc(old_p, old_n * sizeof(T), new_n * sizeof(T)));
+     1638:  437-block  0
+call    0 returned 1638
+        -:  438:}
+        -:  439:
+        -:  440:template<typename T, typename A>
+function _ZN9rapidjson6MallocINS_13GenericMemberINS_4UTF8IcEENS_19MemoryPoolAllocatorINS_12CrtAllocatorEEEEES6_EEPT_RT0_m called 1638 returned 100% blocks executed 100%
+     1638:  441:inline T *Malloc(A& a, size_t n = 1)
+        -:  442:{
+     1638:  443:    return Realloc<T, A>(a, NULL, 0, n);
+     1638:  443-block  0
+call    0 returned 1638
+        -:  444:}
+        -:  445:
+        -:  446:template<typename T, typename A>
+        -:  447:inline void Free(A& a, T *p, size_t n = 1)
+        -:  448:{
+        -:  449:    static_cast<void>(Realloc<T, A>(a, p, n, 0));
+        -:  450:}
+        -:  451:
+        -:  452:#ifdef __GNUC__
+        -:  453:RAPIDJSON_DIAG_PUSH
+        -:  454:RAPIDJSON_DIAG_OFF(effc++) // std::allocator can safely be inherited
+        -:  455:#endif
+        -:  456:
+        -:  457:template <typename T, typename BaseAllocator = CrtAllocator>
+        -:  458:class StdAllocator :
+        -:  459:    public std::allocator<T>
+        -:  460:{
+        -:  461:    typedef std::allocator<T> allocator_type;
+        -:  462:#if RAPIDJSON_HAS_CXX11
+        -:  463:    typedef std::allocator_traits<allocator_type> traits_type;
+        -:  464:#else
+        -:  465:    typedef allocator_type traits_type;
+        -:  466:#endif
+        -:  467:
+        -:  468:public:
+        -:  469:    typedef BaseAllocator BaseAllocatorType;
+        -:  470:
+        -:  471:    StdAllocator() RAPIDJSON_NOEXCEPT :
+        -:  472:        allocator_type(),
+        -:  473:        baseAllocator_()
+        -:  474:    { }
+        -:  475:
+        -:  476:    StdAllocator(const StdAllocator& rhs) RAPIDJSON_NOEXCEPT :
+        -:  477:        allocator_type(rhs),
+        -:  478:        baseAllocator_(rhs.baseAllocator_)
+        -:  479:    { }
+        -:  480:
+        -:  481:    template<typename U>
+        -:  482:    StdAllocator(const StdAllocator<U, BaseAllocator>& rhs) RAPIDJSON_NOEXCEPT :
+        -:  483:        allocator_type(rhs),
+        -:  484:        baseAllocator_(rhs.baseAllocator_)
+        -:  485:    { }
+        -:  486:
+        -:  487:#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+        -:  488:    StdAllocator(StdAllocator&& rhs) RAPIDJSON_NOEXCEPT :
+        -:  489:        allocator_type(std::move(rhs)),
+        -:  490:        baseAllocator_(std::move(rhs.baseAllocator_))
+        -:  491:    { }
+        -:  492:#endif
+        -:  493:#if RAPIDJSON_HAS_CXX11
+        -:  494:    using propagate_on_container_move_assignment = std::true_type;
+        -:  495:    using propagate_on_container_swap = std::true_type;
+        -:  496:#endif
+        -:  497:
+        -:  498:    /* implicit */
+        -:  499:    StdAllocator(const BaseAllocator& allocator) RAPIDJSON_NOEXCEPT :
+        -:  500:        allocator_type(),
+        -:  501:        baseAllocator_(allocator)
+        -:  502:    { }
+        -:  503:
+        -:  504:    ~StdAllocator() RAPIDJSON_NOEXCEPT
+        -:  505:    { }
+        -:  506:
+        -:  507:    template<typename U>
+        -:  508:    struct rebind {
+        -:  509:        typedef StdAllocator<U, BaseAllocator> other;
+        -:  510:    };
+        -:  511:
+        -:  512:    typedef typename traits_type::size_type         size_type;
+        -:  513:    typedef typename traits_type::difference_type   difference_type;
+        -:  514:
+        -:  515:    typedef typename traits_type::value_type        value_type;
+        -:  516:    typedef typename traits_type::pointer           pointer;
+        -:  517:    typedef typename traits_type::const_pointer     const_pointer;
+        -:  518:
+        -:  519:#if RAPIDJSON_HAS_CXX11
+        -:  520:
+        -:  521:    typedef typename std::add_lvalue_reference<value_type>::type &reference;
+        -:  522:    typedef typename std::add_lvalue_reference<typename std::add_const<value_type>::type>::type &const_reference;
+        -:  523:
+        -:  524:    pointer address(reference r) const RAPIDJSON_NOEXCEPT
+        -:  525:    {
+        -:  526:        return std::addressof(r);
+        -:  527:    }
+        -:  528:    const_pointer address(const_reference r) const RAPIDJSON_NOEXCEPT
+        -:  529:    {
+        -:  530:        return std::addressof(r);
+        -:  531:    }
+        -:  532:
+        -:  533:    size_type max_size() const RAPIDJSON_NOEXCEPT
+        -:  534:    {
+        -:  535:        return traits_type::max_size(*this);
+        -:  536:    }
+        -:  537:
+        -:  538:    template <typename ...Args>
+        -:  539:    void construct(pointer p, Args&&... args)
+        -:  540:    {
+        -:  541:        traits_type::construct(*this, p, std::forward<Args>(args)...);
+        -:  542:    }
+        -:  543:    void destroy(pointer p)
+        -:  544:    {
+        -:  545:        traits_type::destroy(*this, p);
+        -:  546:    }
+        -:  547:
+        -:  548:#else // !RAPIDJSON_HAS_CXX11
+        -:  549:
+        -:  550:    typedef typename allocator_type::reference       reference;
+        -:  551:    typedef typename allocator_type::const_reference const_reference;
+        -:  552:
+        -:  553:    pointer address(reference r) const RAPIDJSON_NOEXCEPT
+        -:  554:    {
+        -:  555:        return allocator_type::address(r);
+        -:  556:    }
+        -:  557:    const_pointer address(const_reference r) const RAPIDJSON_NOEXCEPT
+        -:  558:    {
+        -:  559:        return allocator_type::address(r);
+        -:  560:    }
+        -:  561:
+        -:  562:    size_type max_size() const RAPIDJSON_NOEXCEPT
+        -:  563:    {
+        -:  564:        return allocator_type::max_size();
+        -:  565:    }
+        -:  566:
+        -:  567:    void construct(pointer p, const_reference r)
+        -:  568:    {
+        -:  569:        allocator_type::construct(p, r);
+        -:  570:    }
+        -:  571:    void destroy(pointer p)
+        -:  572:    {
+        -:  573:        allocator_type::destroy(p);
+        -:  574:    }
+        -:  575:
+        -:  576:#endif // !RAPIDJSON_HAS_CXX11
+        -:  577:
+        -:  578:    template <typename U>
+        -:  579:    U* allocate(size_type n = 1, const void* = 0)
+        -:  580:    {
+        -:  581:        return RAPIDJSON_NAMESPACE::Malloc<U>(baseAllocator_, n);
+        -:  582:    }
+        -:  583:    template <typename U>
+        -:  584:    void deallocate(U* p, size_type n = 1)
+        -:  585:    {
+        -:  586:        RAPIDJSON_NAMESPACE::Free<U>(baseAllocator_, p, n);
+        -:  587:    }
+        -:  588:
+        -:  589:    pointer allocate(size_type n = 1, const void* = 0)
+        -:  590:    {
+        -:  591:        return allocate<value_type>(n);
+        -:  592:    }
+        -:  593:    void deallocate(pointer p, size_type n = 1)
+        -:  594:    {
+        -:  595:        deallocate<value_type>(p, n);
+        -:  596:    }
+        -:  597:
+        -:  598:#if RAPIDJSON_HAS_CXX11
+        -:  599:    using is_always_equal = std::is_empty<BaseAllocator>;
+        -:  600:#endif
+        -:  601:
+        -:  602:    template<typename U>
+        -:  603:    bool operator==(const StdAllocator<U, BaseAllocator>& rhs) const RAPIDJSON_NOEXCEPT
+        -:  604:    {
+        -:  605:        return baseAllocator_ == rhs.baseAllocator_;
+        -:  606:    }
+        -:  607:    template<typename U>
+        -:  608:    bool operator!=(const StdAllocator<U, BaseAllocator>& rhs) const RAPIDJSON_NOEXCEPT
+        -:  609:    {
+        -:  610:        return !operator==(rhs);
+        -:  611:    }
+        -:  612:
+        -:  613:    //! rapidjson Allocator concept
+        -:  614:    static const bool kNeedFree = BaseAllocator::kNeedFree;
+        -:  615:    static const bool kRefCounted = internal::IsRefCounted<BaseAllocator>::Value;
+        -:  616:    void* Malloc(size_t size)
+        -:  617:    {
+        -:  618:        return baseAllocator_.Malloc(size);
+        -:  619:    }
+        -:  620:    void* Realloc(void* originalPtr, size_t originalSize, size_t newSize)
+        -:  621:    {
+        -:  622:        return baseAllocator_.Realloc(originalPtr, originalSize, newSize);
+        -:  623:    }
+        -:  624:    static void Free(void *ptr) RAPIDJSON_NOEXCEPT
+        -:  625:    {
+        -:  626:        BaseAllocator::Free(ptr);
+        -:  627:    }
+        -:  628:
+        -:  629:private:
+        -:  630:    template <typename, typename>
+        -:  631:    friend class StdAllocator; // access to StdAllocator<!T>.*
+        -:  632:
+        -:  633:    BaseAllocator baseAllocator_;
+        -:  634:};
+        -:  635:
+        -:  636:#if !RAPIDJSON_HAS_CXX17 // std::allocator<void> deprecated in C++17
+        -:  637:template <typename BaseAllocator>
+        -:  638:class StdAllocator<void, BaseAllocator> :
+        -:  639:    public std::allocator<void>
+        -:  640:{
+        -:  641:    typedef std::allocator<void> allocator_type;
+        -:  642:
+        -:  643:public:
+        -:  644:    typedef BaseAllocator BaseAllocatorType;
+        -:  645:
+        -:  646:    StdAllocator() RAPIDJSON_NOEXCEPT :
+        -:  647:        allocator_type(),
+        -:  648:        baseAllocator_()
+        -:  649:    { }
+        -:  650:
+        -:  651:    StdAllocator(const StdAllocator& rhs) RAPIDJSON_NOEXCEPT :
+        -:  652:        allocator_type(rhs),
+        -:  653:        baseAllocator_(rhs.baseAllocator_)
+        -:  654:    { }
+        -:  655:
+        -:  656:    template<typename U>
+        -:  657:    StdAllocator(const StdAllocator<U, BaseAllocator>& rhs) RAPIDJSON_NOEXCEPT :
+        -:  658:        allocator_type(rhs),
+        -:  659:        baseAllocator_(rhs.baseAllocator_)
+        -:  660:    { }
+        -:  661:
+        -:  662:    /* implicit */
+        -:  663:    StdAllocator(const BaseAllocator& allocator) RAPIDJSON_NOEXCEPT :
+        -:  664:        allocator_type(),
+        -:  665:        baseAllocator_(allocator)
+        -:  666:    { }
+        -:  667:
+        -:  668:    ~StdAllocator() RAPIDJSON_NOEXCEPT
+        -:  669:    { }
+        -:  670:
+        -:  671:    template<typename U>
+        -:  672:    struct rebind {
+        -:  673:        typedef StdAllocator<U, BaseAllocator> other;
+        -:  674:    };
+        -:  675:
+        -:  676:    typedef typename allocator_type::value_type value_type;
+        -:  677:
+        -:  678:private:
+        -:  679:    template <typename, typename>
+        -:  680:    friend class StdAllocator; // access to StdAllocator<!T>.*
+        -:  681:
+        -:  682:    BaseAllocator baseAllocator_;
+        -:  683:};
+        -:  684:#endif
+        -:  685:
+        -:  686:#ifdef __GNUC__
+        -:  687:RAPIDJSON_DIAG_POP
+        -:  688:#endif
+        -:  689:
+        -:  690:RAPIDJSON_NAMESPACE_END
+        -:  691:
+        -:  692:#endif // RAPIDJSON_ENCODINGS_H_

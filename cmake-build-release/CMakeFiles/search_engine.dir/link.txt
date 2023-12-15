@@ -1,0 +1,1 @@
+/bin/c++  -O3   CMakeFiles/search_engine.dir/main.cpp.o CMakeFiles/search_engine.dir/Runner.cpp.o CMakeFiles/search_engine.dir/UserInterface.cpp.o CMakeFiles/search_engine.dir/porter2_stemmer.cpp.o  -o search_engine 

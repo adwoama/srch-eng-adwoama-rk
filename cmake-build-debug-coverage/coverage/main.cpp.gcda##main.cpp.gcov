@@ -1,0 +1,76 @@
+        -:    0:Source:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/main.cpp
+        -:    0:Graph:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/main.cpp.gcno
+        -:    0:Data:/mnt/c/CLionProjects/21s-srch-eng-csphalopods/cmake-build-debug-coverage/CMakeFiles/search_engine.dir/main.cpp.gcda
+        -:    0:Runs:1
+        -:    1://#define CATCH_CONFIG_RUNNER
+        -:    2://#include "catchTDD.hpp"
+        -:    3:#include <iostream>
+        -:    4:#include "UserInterface.h"
+        -:    5:
+        -:    6:using namespace std;
+        -:    7:
+        -:    8:void runCatchTests();
+        -:    9:
+function main called 1 returned 100% blocks executed 46%
+        1:   10:int main(int argc, char** argv) {
+        1:   11:    if(argc == 1) {
+        1:   11-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+    #####:   12:        runCatchTests();
+    %%%%%:   12-block  0
+call    0 never executed
+    #####:   13:        return 0;
+        -:   14:    }
+        1:   15:    else if(argc != 2){
+        1:   15-block  0
+branch  0 taken 0 (fallthrough)
+branch  1 taken 1
+    #####:   16:        throw std::out_of_range("Enter 0 or 1 arguments");
+    %%%%%:   16-block  0
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    %%%%%:   16-block  1
+call    4 never executed
+    $$$$$:   16-block  2
+call    5 never executed
+        -:   17:    }
+        -:   18://    Runner searchEng;
+        -:   19://    string word = argv[1];
+        2:   20:    string path = argv[1];
+        1:   20-block  0
+call    0 returned 1
+call    1 returned 1
+branch  2 taken 1 (fallthrough)
+branch  3 taken 0 (throw)
+call    4 returned 1
+    $$$$$:   20-block  1
+    $$$$$:   20-block  2
+call    5 never executed
+        -:   21:    //  string path = R's filepath "/mnt/c/Users/Boi/Documents/School2021Spring/DataStructures/timing_demo_data_sets/ds_01";
+        -:   22:            //"cs2341_data";//filepath of data on Maggie's computer
+        -:   23:  /*  searchEng.MakeDocList(word, path);
+        -:   24:    vector<string> docIds = searchEng.Search(word);
+        -:   25:    searchEng.Output(word, docIds); */
+        1:   26:    UserInterface program(path);
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+    $$$$$:   26-block  0
+call    3 never executed
+        1:   27:    program.receiveQueries();
+        1:   27-block  0
+call    0 returned 1
+branch  1 taken 1 (fallthrough)
+branch  2 taken 0 (throw)
+        1:   28:    return 0;
+        1:   28-block  0
+call    0 returned 1
+        -:   29:}
+        -:   30:
+function _Z13runCatchTestsv called 0 returned 0% blocks executed 0%
+    #####:   31:void runCatchTests(){
+        -:   32:   // Catch::Session().run();
+    #####:   33:}
